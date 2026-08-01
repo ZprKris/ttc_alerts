@@ -1,19 +1,25 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import AppHeader from './components/AppHeader.jsx'
 import MapWorkspace from './components/MapWorkspace.jsx'
 import { sampleNetwork, stations } from './data/network.js'
-import MonitoringPanelPlaceholder from './features/monitoring/MonitoringPanelPlaceholder.jsx'
+import MonitoringPanel from './features/monitoring/MonitoringPanel.jsx'
 import { useDirectionalSelection } from './features/selection/useDirectionalSelection.js'
 import { useStationSelection } from './features/selection/useStationSelection.js'
+import { readPendingPreferenceDraft } from './services/preferenceDraft.js'
 
 export default function App() {
+  const [initialDraft] = useState(readPendingPreferenceDraft)
+  const initialStationIds = (initialDraft?.stationIds ?? []).filter(
+    (stationId) => stations.some((station) => station.id === stationId),
+  )
   const {
     selectedStationIds,
     selectedCount,
     toggleStation,
     selectStation,
     clearSelection,
-  } = useStationSelection()
+    replaceSelection,
+  } = useStationSelection(initialStationIds)
   const {
     activeStationId,
     announcement,
@@ -48,6 +54,16 @@ export default function App() {
     clearSelection()
     resetDirectionalSelection()
   }, [clearSelection, resetDirectionalSelection])
+  const handleReplaceSelection = useCallback(
+    (stationIds) => {
+      const knownStationIds = stationIds.filter((stationId) =>
+        stations.some((station) => station.id === stationId),
+      )
+      replaceSelection(knownStationIds)
+      resetDirectionalSelection()
+    },
+    [replaceSelection, resetDirectionalSelection],
+  )
 
   return (
     <div className="app">
@@ -65,10 +81,12 @@ export default function App() {
           onNavigate={navigate}
           onToggleStation={handleToggleStation}
         />
-        <MonitoringPanelPlaceholder
+        <MonitoringPanel
+          initialDraft={initialDraft}
           selectedStations={selectedStations}
           selectedCount={selectedCount}
           onClearSelection={handleClearSelection}
+          onReplaceSelection={handleReplaceSelection}
         />
       </main>
     </div>

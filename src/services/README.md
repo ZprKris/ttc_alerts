@@ -1,5 +1,16 @@
 # Services
 
-External integrations belong in this directory. Public browser clients and
-privileged server-side operations must remain separate. Supabase and TTC feed
-integration are intentionally deferred to their approved implementation phases.
+This directory contains public browser adapters only:
+
+- `supabaseClient.js` configures a passwordless PKCE client from public Vite
+  environment variables.
+- `subscriptionApi.js` sends magic links and calls the authenticated preference
+  Edge Function.
+- `preferenceDraft.js` temporarily retains non-personal schedule/station fields
+  in `sessionStorage` while a magic link is completed.
+
+The server boundary lives in `supabase/functions`, and database authorization
+lives in `supabase/migrations`. Never add service-role keys, email-provider
+secrets, or TTC polling credentials here. The TTC alert poller is a server-only
+Edge Function in `supabase/functions/alerts-poll`; it is never imported by the
+frontend and writes pending notification candidates for Phase 8 email delivery.

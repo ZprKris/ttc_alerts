@@ -14,7 +14,7 @@ export default function AppHeader() {
           </span>
         </span>
       </a>
-      <span className="phase-badge">Directional selection</span>
+      <span className="phase-badge">Verified preferences</span>
     </header>
   )
 }

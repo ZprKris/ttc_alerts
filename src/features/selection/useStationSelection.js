@@ -1,8 +1,10 @@
 import { useCallback, useState } from 'react'
 import { toggleStationId } from './selectionModel.js'
 
-export function useStationSelection() {
-  const [selectedStationIds, setSelectedStationIds] = useState(() => new Set())
+export function useStationSelection(initialStationIds = []) {
+  const [selectedStationIds, setSelectedStationIds] = useState(
+    () => new Set(initialStationIds),
+  )
 
   const toggleStation = useCallback((stationId) => {
     setSelectedStationIds((currentSelection) =>
@@ -26,11 +28,16 @@ export function useStationSelection() {
     )
   }, [])
 
+  const replaceSelection = useCallback((stationIds) => {
+    setSelectedStationIds(new Set(stationIds))
+  }, [])
+
   return {
     selectedStationIds,
     selectedCount: selectedStationIds.size,
     toggleStation,
     selectStation,
     clearSelection,
+    replaceSelection,
   }
 }

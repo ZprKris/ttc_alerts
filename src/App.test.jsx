@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import userEvent from '@testing-library/user-event'
 import App from './App.jsx'
@@ -159,5 +159,60 @@ describe('subway map prototype', () => {
     expect(hillcrest).toHaveFocus()
     expect(screen.getByLabelText('2 stations selected')).toHaveTextContent('2')
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('shows understandable monitoring validation errors', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(
+      screen.getByRole('button', { name: /verify email & continue/i }),
+    )
+
+    const errorSummary = screen.getByRole('alert')
+    expect(errorSummary).toHaveTextContent(
+      'Select at least one station to monitor.',
+    )
+    expect(errorSummary).toHaveTextContent('Enter a valid email address.')
+    expect(errorSummary).toHaveTextContent(
+      'Consent is required before monitoring emails can be sent.',
+    )
+  })
+
+  it('does not claim to save when Supabase is unconfigured', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const northgate = await screen.findByRole('button', {
+      name: /northgate station/i,
+    })
+
+    await user.click(northgate)
+    fireEvent.change(screen.getByLabelText(/start time/i), {
+      target: { value: '22:00' },
+    })
+    fireEvent.change(screen.getByLabelText(/end time/i), {
+      target: { value: '02:00' },
+    })
+    await user.type(
+      screen.getByLabelText(/email address/i),
+      'rider@example.com',
+    )
+    await user.click(
+      screen.getByRole('checkbox', {
+        name: /i consent to receive TTC monitoring emails/i,
+      }),
+    )
+
+    expect(
+      screen.getByText(/overnight schedule:/i).closest('.schedule-notice'),
+    ).toHaveTextContent('continues into the following day until 02:00')
+
+    await user.click(
+      screen.getByRole('button', { name: /verify email & continue/i }),
+    )
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Supabase is not configured. Your preferences were validated but not saved.',
+    )
   })
 })

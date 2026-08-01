@@ -34,10 +34,32 @@ announces the boundary. Multiple candidates never trigger an implicit choice:
 the interface presents line- and branch-labelled buttons first. Arrow actions add
 stations and never deselect existing manual choices.
 
-The browser will eventually call authenticated or token-verified Supabase
-functions. Privileged preference writes, alert polling, deduplication, and email
-delivery remain server-side. Row-level security will be designed and approved
-before any public submission endpoint is enabled.
+Monitoring preferences preserve start and end as local wall-clock values together
+with an IANA time zone so daylight-saving transitions can be evaluated correctly
+server-side. Selected weekdays identify the day a window starts. An end time
+earlier than its start crosses midnight into the following day; equal times are
+rejected rather than interpreted as an accidental 24-hour window.
+
+Supabase Auth provides passwordless email magic links using PKCE. The browser
+temporarily stores only a non-personal schedule/station draft in session storage
+while verification completes. The email remains in Supabase Auth and is not
+duplicated in application tables. Verified sessions call an Edge Function that
+validates the bearer token, then performs reads and approved security-definer RPCs
+with a user-scoped key. Forced row-level security restricts reads to the owning
+`auth.uid()` and direct table writes are revoked. Unsubscribe deletes schedule and
+station preferences while retaining a minimal unsubscribed identity/consent
+record. See `docs/supabase-setup.md` for the schema and operational setup.
+
+The Phase 7 `alerts-poll` Edge Function uses the official TTC GTFS-Realtime subway
+binary feed. A standard GTFS-Realtime binding decodes alert entities, while a
+pure matching module maps route/stop selectors and phrases such as “between A
+and B” onto ordered station ranges. Known line alerts fall back to every station
+on that line; alerts that cannot be mapped confidently are retained only when
+they identify a known station or line. Subscriber matches are constrained by the
+stored IANA-time-zone schedule and create pending, deduplicated notification
+candidates. The poller uses a server-only service-role secret and a separate
+poll secret; neither is exposed to the browser. Email delivery and candidate
+claiming remain Phase 8 work.
 
 ## Quality and deployment
 

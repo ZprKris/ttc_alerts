@@ -9,6 +9,7 @@ coverage/
 .env
 .env.local
 .env.*.local
+supabase/.temp/
 
 # Editors and operating systems
 .DS_Store
