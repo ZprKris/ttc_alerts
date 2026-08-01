@@ -4,45 +4,33 @@ import { getDirectionalCandidates } from './directionalNavigation.js'
 
 describe('ordered directional navigation', () => {
   it('follows an ordinary line in station order', () => {
-    const candidates = getDirectionalCandidates(sampleNetwork, 'cedar', 'down')
+    const candidates = getDirectionalCandidates(sampleNetwork, 'north-york-centre', 'down')
 
     expect(candidates).toHaveLength(1)
     expect(candidates[0]).toMatchObject({
-      stationId: 'central',
-      lineId: 'line-amber',
+      stationId: 'sheppard-yonge',
+      lineId: 'line-1',
     })
   })
 
   it('returns no candidate past a terminal station', () => {
-    expect(getDirectionalCandidates(sampleNetwork, 'northgate', 'up')).toEqual(
+    expect(getDirectionalCandidates(sampleNetwork, 'finch', 'up')).toEqual(
       [],
     )
   })
 
   it('uses the arrow direction to choose a line at an interchange', () => {
     expect(
-      getDirectionalCandidates(sampleNetwork, 'central', 'up')[0],
-    ).toMatchObject({ stationId: 'cedar', lineId: 'line-amber' })
+      getDirectionalCandidates(sampleNetwork, 'st-george', 'left')[0],
+    ).toMatchObject({ stationId: 'spadina', lineId: 'line-1' })
     expect(
-      getDirectionalCandidates(sampleNetwork, 'central', 'right')[0],
-    ).toMatchObject({ stationId: 'market', lineId: 'line-green' })
+      getDirectionalCandidates(sampleNetwork, 'st-george', 'right')[0],
+    ).toMatchObject({ stationId: 'museum', lineId: 'line-1' })
   })
 
   it('returns every ordered option when a branch direction is ambiguous', () => {
-    const candidates = getDirectionalCandidates(
-      sampleNetwork,
-      'market',
-      'right',
-    )
-
+    const candidates = getDirectionalCandidates(sampleNetwork, 'st-george', 'left')
     expect(candidates).toHaveLength(2)
-    expect(candidates.map((candidate) => candidate.stationId)).toEqual([
-      'riverside',
-      'hillcrest',
-    ])
-    expect(candidates[1]).toMatchObject({
-      branchId: 'green-hill-branch',
-      branchName: 'Hill branch',
-    })
+    expect(candidates.map((candidate) => candidate.lineId)).toEqual(['line-1', 'line-2'])
   })
 })

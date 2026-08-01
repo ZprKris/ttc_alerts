@@ -68,7 +68,7 @@ export default function SubwayMap({
     <div
       className="subway-map"
       role="region"
-      aria-label="Interactive sample subway map"
+      aria-label="Interactive TTC subway map"
     >
       <ReactFlow
         nodes={nodes}

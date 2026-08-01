@@ -17,9 +17,9 @@ describe('createFlowElements', () => {
 
   it('marks the shared station as an interchange', () => {
     const { nodes } = createFlowElements(sampleNetwork)
-    const central = nodes.find((node) => node.id === 'central')
+    const central = nodes.find((node) => node.id === 'sheppard-yonge')
 
     expect(central.data.isInterchange).toBe(true)
-    expect(central.data.lineIds).toEqual(['line-amber', 'line-green'])
+    expect(central.data.lineIds).toEqual(['line-1', 'line-4'])
   })
 })

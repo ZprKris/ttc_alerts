@@ -86,8 +86,11 @@ export function createNetworkCatalog({
   const stationById = new Map(stations.map((station) => [station.id, station]))
   const stationByStopId = new Map(
     stations
-      .filter((station) => station.officialStopId)
-      .map((station) => [station.officialStopId, station]),
+      .flatMap((station) =>
+        (station.officialStopIds ?? [station.officialStopId]).filter(Boolean).map(
+          (officialStopId) => [officialStopId, station],
+        ),
+      ),
   )
   const stationNameEntries = stations
     .filter((station) => station.name)

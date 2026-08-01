@@ -48,7 +48,7 @@ export function createFlowElements(network) {
     const line = linesById.get(connection.lineId)
 
     if (!sourceStation || !targetStation || !line) {
-      throw new Error(`Invalid sample connection: ${connection.id}`)
+      throw new Error(`Invalid network connection: ${connection.id}`)
     }
 
     return {

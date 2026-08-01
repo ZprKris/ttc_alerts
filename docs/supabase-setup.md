@@ -134,12 +134,12 @@ Run it every few minutes, but keep only one invocation in flight. The function
 records each run in `alert_poll_runs`, including failures, so operations can
 monitor stale feeds before Phase 8 sends anything.
 
-The development seed contains fictional station and route identifiers only.
-Until Phase 9 imports the official TTC static GTFS station/route mapping, live
-TTC route and stop identifiers will not match the sample catalog and no live
-candidate should be expected. The feed decoder and matching logic are tested
-against representative GTFS-Realtime entities and the published binary endpoint
-has been decoded successfully; no production poll was run from this workspace.
+The station seed is generated from the official TTC static GTFS subway catalog.
+To refresh it, extract the published TTC schedules archive, set `TTC_GTFS_DIR`
+to its extracted directory, and run `npm run generate:ttc`. Commit the generated
+`src/data/ttcNetwork.js` and `supabase/seed-ttc.sql` with the matching catalog
+migration. The feed decoder and matching logic are tested against representative
+GTFS-Realtime entities.
 
 ## Phase 8 email delivery
 

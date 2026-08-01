@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import App from './App.jsx'
 import { MAP_INTERACTION_OPTIONS } from './features/map/mapConfig.js'
 
-describe('subway map prototype', () => {
+describe('subway map', () => {
   it('renders the sample network and monitoring panel', () => {
     render(<App />)
 
@@ -13,11 +13,9 @@ describe('subway map prototype', () => {
         name: /choose the stations you care about/i,
       }),
     ).toBeInTheDocument()
-    expect(
-      screen.getByRole('region', { name: /interactive sample subway map/i }),
-    ).toBeInTheDocument()
-    expect(screen.getByText('Northgate')).toBeInTheDocument()
-    expect(screen.getByText('Central')).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: /interactive ttc subway map/i })).toBeInTheDocument()
+    expect(screen.getByText('Finch')).toBeInTheDocument()
+    expect(screen.getByText('Sheppard-Yonge')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /zoom in/i })).toBeEnabled()
     expect(
       screen.getByRole('complementary', { name: /monitoring setup/i }),
@@ -42,7 +40,7 @@ describe('subway map prototype', () => {
     const user = userEvent.setup()
     render(<App />)
     const northgate = await screen.findByRole('button', {
-      name: /northgate station/i,
+      name: /finch station/i,
     })
 
     expect(northgate).toHaveAttribute('aria-pressed', 'false')
@@ -53,12 +51,12 @@ describe('subway map prototype', () => {
     expect(screen.getByLabelText('1 station selected')).toHaveTextContent('1')
     expect(
       screen.getByRole('button', {
-        name: /select cedar down via amber line/i,
+        name: /select north york centre down via line 1/i,
       }),
     ).toBeEnabled()
     expect(
       screen.getByRole('list', { name: /selected stations/i }),
-    ).toHaveTextContent('Northgate')
+    ).toHaveTextContent('Finch')
 
     await user.click(northgate)
 
@@ -70,10 +68,10 @@ describe('subway map prototype', () => {
     const user = userEvent.setup()
     render(<App />)
     const northgate = await screen.findByRole('button', {
-      name: /northgate station/i,
+      name: /finch station/i,
     })
     const central = await screen.findByRole('button', {
-      name: /central station, interchange/i,
+      name: /sheppard-yonge station, interchange/i,
     })
 
     northgate.focus()
@@ -97,20 +95,20 @@ describe('subway map prototype', () => {
     const user = userEvent.setup()
     render(<App />)
     const northgate = await screen.findByRole('button', {
-      name: /northgate station/i,
+      name: /finch station/i,
     })
 
     await user.click(northgate)
     await user.keyboard('{ArrowDown}')
 
-    const cedar = screen.getByRole('button', { name: /cedar station/i })
+    const cedar = screen.getByRole('button', { name: /north york centre station/i })
     expect(cedar).toHaveAttribute('aria-pressed', 'true')
     expect(cedar).toHaveFocus()
 
     await user.keyboard('{ArrowDown}')
 
     const central = screen.getByRole('button', {
-      name: /central station, interchange/i,
+      name: /sheppard-yonge station, interchange/i,
     })
     expect(central).toHaveAttribute('aria-pressed', 'true')
     expect(central).toHaveFocus()
@@ -121,39 +119,39 @@ describe('subway map prototype', () => {
     const user = userEvent.setup()
     render(<App />)
     const northgate = await screen.findByRole('button', {
-      name: /northgate station/i,
+      name: /finch station/i,
     })
 
     await user.click(northgate)
     await user.keyboard('{ArrowUp}')
 
     expect(
-      screen.getByText('No station in the up direction from Northgate.'),
+      screen.getByText('No station in the up direction from Finch.'),
     ).toBeInTheDocument()
     expect(screen.getByLabelText('1 station selected')).toHaveTextContent('1')
   })
 
-  it('requires an explicit line-aware choice at a branch', async () => {
+  it('requires an explicit line-aware choice at an interchange', async () => {
     const user = userEvent.setup()
     render(<App />)
     const market = await screen.findByRole('button', {
-      name: /market station/i,
+      name: /st george station, interchange/i,
     })
 
     await user.click(market)
-    await user.keyboard('{ArrowRight}')
+    await user.keyboard('{ArrowLeft}')
 
     expect(
-      screen.getByRole('dialog', { name: /choose a right branch/i }),
+      screen.getByRole('dialog', { name: /choose a left branch/i }),
     ).toBeInTheDocument()
     expect(screen.getByLabelText('1 station selected')).toHaveTextContent('1')
 
     await user.click(
-      screen.getByRole('button', { name: /hillcrest.*hill branch/i }),
+      screen.getByRole('button', { name: /spadina.*line 1/i }),
     )
 
     const hillcrest = screen.getByRole('button', {
-      name: /hillcrest station/i,
+      name: /spadina station/i,
     })
     expect(hillcrest).toHaveAttribute('aria-pressed', 'true')
     expect(hillcrest).toHaveFocus()
@@ -183,7 +181,7 @@ describe('subway map prototype', () => {
     const user = userEvent.setup()
     render(<App />)
     const northgate = await screen.findByRole('button', {
-      name: /northgate station/i,
+      name: /finch station/i,
     })
 
     await user.click(northgate)

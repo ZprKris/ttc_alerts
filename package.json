@@ -11,7 +11,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "generate:ttc": "node scripts/generate-ttc-network.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.111.0",

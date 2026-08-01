@@ -72,7 +72,7 @@ async function loadNetworkCatalog(admin) {
   const [stationsResult, linesResult, lineStationsResult] = await Promise.all([
     admin
       .from('transit_stations')
-      .select('id, name, official_stop_id')
+      .select('id, name, official_stop_id, official_stop_ids')
       .eq('is_active', true),
     admin
       .from('transit_lines')
@@ -96,6 +96,7 @@ async function loadNetworkCatalog(admin) {
       id: station.id,
       name: station.name,
       officialStopId: station.official_stop_id,
+      officialStopIds: station.official_stop_ids,
     })),
     lines: linesResult.data.map((line) => ({
       id: line.id,
