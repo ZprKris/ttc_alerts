@@ -340,29 +340,6 @@ h2 {
   background: #e2e7ee;
 }
 
-.panel-preview {
-  display: grid;
-  gap: 16px;
-}
-
-.panel-preview div {
-  display: grid;
-  gap: 4px;
-}
-
-.panel-preview span {
-  color: #718096;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-}
-
-.panel-preview strong {
-  color: #39475c;
-  font-size: 0.86rem;
-}
-
 .primary-button {
   width: 100%;
   min-height: 46px;

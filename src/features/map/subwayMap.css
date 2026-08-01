@@ -32,7 +32,7 @@
   position: relative;
   width: 28px;
   height: 28px;
-  --label-offset: 19px;
+  --label-offset: 25px;
 }
 
 .station-button {
@@ -105,24 +105,22 @@
 }
 
 .station-button:hover .station-label {
-  text-decoration: underline;
   text-decoration-thickness: 2px;
-  text-underline-offset: 3px;
 }
 
 .station-button:focus-visible {
-  outline: 3px solid #2563eb;
+  outline: 3px solid #2cb8c8;
   outline-offset: 2px;
 }
 
 .station-node.is-selected .station-disc,
 .station-node.is-selected .station-button:hover .station-disc {
-  background: #172035;
+  background: #2cb8c8;
   border-color: #fff;
   box-shadow:
-    0 0 0 3px #172035,
-    0 0 0 7px #d71920,
-    0 3px 7px rgb(15 23 42 / 28%);
+    0 0 0 3px #2cb8c8,
+    0 0 0 7px #2cb8c8,
+    0 3px 7px #2cb8c8;
   transform: translate(-50%, -50%) scale(1.08);
 }
 
@@ -130,17 +128,15 @@
 .station-node.is-selected.is-interchange .station-button:hover .station-disc {
   box-shadow:
     inset 0 0 0 3px #fff,
-    inset 0 0 0 6px #172035,
-    0 0 0 3px #172035,
-    0 0 0 7px #d71920,
-    0 3px 7px rgb(15 23 42 / 28%);
+    inset 0 0 0 6px #2cb8c8,
+    0 0 0 3px #2cb8c8,
+    0 0 0 7px #2cb8c8,
+    0 3px 7px #2cb8c8;
 }
 
 .station-node.is-selected .station-label {
   font-weight: 850;
-  text-decoration: underline;
   text-decoration-thickness: 2px;
-  text-underline-offset: 3px;
 }
 
 .station-handle {
