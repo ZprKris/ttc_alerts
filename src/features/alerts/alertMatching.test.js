@@ -1,0 +1,104 @@
+import { describe, expect, it } from 'vitest'
+import {
+  createNetworkCatalog,
+  expandAffectedStations,
+  extractAlertDetails,
+  matchesMonitoringWindow,
+} from '../../../supabase/functions/_shared/alertMatching.js'
+
+const catalog = createNetworkCatalog({
+  stations: [
+    { id: 'finch', name: 'Finch', officialStopId: 'stop-finch' },
+    { id: 'yonge', name: 'Yonge', officialStopId: 'stop-yonge' },
+    { id: 'eglinton', name: 'Eglinton', officialStopId: 'stop-eglinton' },
+    { id: 'st-clair', name: 'St Clair', officialStopId: 'stop-st-clair' },
+  ],
+  lines: [{ id: 'line-1', officialRouteId: '1', name: 'Line 1' }],
+  lineStations: [
+    { lineId: 'line-1', stationId: 'finch', sequence: 1 },
+    { lineId: 'line-1', stationId: 'yonge', sequence: 2 },
+    { lineId: 'line-1', stationId: 'eglinton', sequence: 3 },
+    { lineId: 'line-1', stationId: 'st-clair', sequence: 4 },
+  ],
+})
+
+describe('TTC alert matching', () => {
+  it('expands a route alert between named endpoints inclusively', () => {
+    const details = extractAlertDetails({
+      id: 'alert-1',
+      alert: {
+        informedEntity: [{ routeId: '1' }],
+        headerText: {
+          translation: [
+            {
+              language: 'en',
+              text: 'No subway service between Finch and Eglinton',
+            },
+          ],
+        },
+      },
+    })
+
+    expect(expandAffectedStations(details, catalog)).toMatchObject({
+      affectedStationIds: ['finch', 'yonge', 'eglinton'],
+      lineIds: ['line-1'],
+      matchKind: 'station',
+      endpointPair: ['finch', 'eglinton'],
+    })
+  })
+
+  it('uses all stations on a known line when no stop is identified', () => {
+    const details = extractAlertDetails({
+      id: 'alert-2',
+      alert: {
+        informedEntity: [{ routeId: '1' }],
+        headerText: { translation: [{ text: 'Line 1 delays' }] },
+      },
+    })
+
+    expect(expandAffectedStations(details, catalog)).toMatchObject({
+      affectedStationIds: ['finch', 'yonge', 'eglinton', 'st-clair'],
+      matchKind: 'line',
+    })
+  })
+
+  it('prefers a directly identified stop over a line-wide fallback', () => {
+    const details = extractAlertDetails({
+      id: 'alert-3',
+      alert: {
+        informedEntity: [{ routeId: '1', stopId: 'stop-yonge' }],
+        headerText: { translation: [{ text: 'Elevator alert at Yonge' }] },
+      },
+    })
+
+    expect(expandAffectedStations(details, catalog).affectedStationIds).toEqual(
+      ['yonge'],
+    )
+  })
+
+  it('handles same-day and overnight monitoring windows in the configured zone', () => {
+    expect(
+      matchesMonitoringWindow(
+        {
+          startTime: '08:00',
+          endTime: '10:00',
+          timeZone: 'America/Toronto',
+          isoWeekdays: [1],
+        },
+        new Date('2026-08-03T13:30:00.000Z'),
+      ),
+    ).toBe(true)
+
+    expect(
+      matchesMonitoringWindow(
+        {
+          startTime: '22:00',
+          endTime: '02:00',
+          timeZone: 'America/Toronto',
+          isoWeekdays: [1],
+        },
+        new Date('2026-08-04T05:30:00.000Z'),
+      ),
+    ).toBe(true)
+  })
+})
