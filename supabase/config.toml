@@ -37,3 +37,6 @@ verify_jwt = false
 
 [functions.alerts-poll]
 verify_jwt = false
+
+[functions.notifications-send]
+verify_jwt = false

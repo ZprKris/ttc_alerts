@@ -235,6 +235,19 @@ globalThis.Deno.serve(async (request) => {
         )
       }
 
+      const { error: emailEventError } = await userClient.rpc(
+        'queue_my_subscription_email',
+        { p_event_type: 'preference_confirmation' },
+      )
+      if (emailEventError) {
+        console.error('Preference confirmation queue failed', emailEventError)
+        return jsonResponse(
+          { error: 'Monitoring preferences could not be finalized.' },
+          500,
+          origin,
+        )
+      }
+
       return jsonResponse(
         { preferenceId: data, subscriptionStatus: 'active' },
         200,
@@ -252,6 +265,14 @@ globalThis.Deno.serve(async (request) => {
           400,
           origin,
         )
+      }
+
+      const { error: emailEventError } = await userClient.rpc(
+        'queue_my_subscription_email',
+        { p_event_type: 'unsubscribe_confirmation' },
+      )
+      if (emailEventError) {
+        console.error('Unsubscribe confirmation queue failed', emailEventError)
       }
 
       return jsonResponse({ unsubscribed: data === true }, 200, origin)

@@ -21,6 +21,14 @@ const alertsPoller = readFileSync(
   join(process.cwd(), 'supabase/functions/alerts-poll/index.js'),
   'utf8',
 )
+const emailMigration = readFileSync(
+  join(process.cwd(), 'supabase/migrations/202608010003_email_delivery.sql'),
+  'utf8',
+)
+const notificationsSender = readFileSync(
+  join(process.cwd(), 'supabase/functions/notifications-send/index.js'),
+  'utf8',
+)
 
 describe('Supabase security boundaries', () => {
   it('forces RLS and denies direct authenticated mutations', () => {
@@ -63,5 +71,20 @@ describe('Supabase security boundaries', () => {
       "request.headers.get('x-alerts-poll-secret')",
     )
     expect(alertsPoller).not.toContain('sendEmail')
+  })
+
+  it('keeps Resend delivery server-only with durable claims and text alternatives', () => {
+    expect(emailMigration).toContain(
+      "status in ('pending', 'processing', 'sent', 'skipped', 'failed')",
+    )
+    expect(emailMigration).toContain('for update skip locked')
+    expect(emailMigration).toContain(
+      'grant execute on function public.claim_alert_notification_candidates(integer)',
+    )
+    expect(notificationsSender).toContain('https://api.resend.com/emails')
+    expect(notificationsSender).toContain('RESEND_API_KEY')
+    expect(notificationsSender).toContain('text,')
+    expect(notificationsSender).toContain('html,')
+    expect(notificationsSender).not.toContain('VITE_')
   })
 })

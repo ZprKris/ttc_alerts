@@ -58,8 +58,11 @@ on that line; alerts that cannot be mapped confidently are retained only when
 they identify a known station or line. Subscriber matches are constrained by the
 stored IANA-time-zone schedule and create pending, deduplicated notification
 candidates. The poller uses a server-only service-role secret and a separate
-poll secret; neither is exposed to the browser. Email delivery and candidate
-claiming remain Phase 8 work.
+poll secret; neither is exposed to the browser. Phase 8’s Resend worker claims
+those candidates and subscription confirmation/unsubscribe events with row
+locks, sends plain-text and accessible HTML messages, and records sent/failed
+delivery state. Supabase Auth continues to send passwordless confirmation and
+preference-management magic links.
 
 ## Quality and deployment
 

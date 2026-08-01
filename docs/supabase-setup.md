@@ -141,6 +141,28 @@ candidate should be expected. The feed decoder and matching logic are tested
 against representative GTFS-Realtime entities and the published binary endpoint
 has been decoded successfully; no production poll was run from this workspace.
 
+## Phase 8 email delivery
+
+Resend is the selected provider. The `notifications-send` Edge Function claims
+pending alert candidates and subscription email events with row locks, sends
+accessible HTML and plain-text variants through `https://api.resend.com/emails`,
+and marks each event `sent` or `failed`. Stale `processing` rows return to
+`pending` after 15 minutes so a failed worker does not lose mail permanently.
+
+Supabase Auth remains responsible for passwordless confirmation and preference-
+management magic links. The application queues preference-confirmation and
+unsubscribe-confirmation events, while the Resend worker sends those messages
+alongside matched TTC alerts. Every outbound message includes a management link;
+the link requires the recipient to complete a fresh verified magic link before
+preferences are shown.
+
+Configure these additional server-only secrets: `NOTIFICATIONS_SEND_SECRET`,
+`RESEND_API_KEY`, a verified `RESEND_FROM_EMAIL`, and `PUBLIC_APP_URL` (for
+example `https://zprkris.github.io/ttc_alerts`). Deploy with
+`supabase functions deploy notifications-send --no-verify-jwt` and schedule a
+protected `POST` invocation after each alert poll. Never put a Resend key,
+sender credential, or scheduler secret in a `VITE_` variable.
+
 ## Verification
 
 Run the repository checks:
