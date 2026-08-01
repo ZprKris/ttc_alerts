@@ -1,0 +1,15 @@
+export const MAP_INTERACTION_OPTIONS = Object.freeze({
+  nodesDraggable: false,
+  nodesConnectable: false,
+  nodesFocusable: false,
+  edgesFocusable: false,
+  edgesReconnectable: false,
+  elementsSelectable: false,
+  deleteKeyCode: null,
+  selectionKeyCode: null,
+  multiSelectionKeyCode: null,
+  panOnDrag: true,
+  zoomOnScroll: true,
+  zoomOnPinch: true,
+  zoomOnDoubleClick: true,
+})

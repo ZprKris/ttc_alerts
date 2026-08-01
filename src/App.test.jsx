@@ -1,0 +1,163 @@
+import { render, screen } from '@testing-library/react'
+import { describe, expect, it } from 'vitest'
+import userEvent from '@testing-library/user-event'
+import App from './App.jsx'
+import { MAP_INTERACTION_OPTIONS } from './features/map/mapConfig.js'
+
+describe('subway map prototype', () => {
+  it('renders the sample network and monitoring panel', () => {
+    render(<App />)
+
+    expect(
+      screen.getByRole('heading', {
+        name: /choose the stations you care about/i,
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('region', { name: /interactive sample subway map/i }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Northgate')).toBeInTheDocument()
+    expect(screen.getByText('Central')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /zoom in/i })).toBeEnabled()
+    expect(
+      screen.getByRole('complementary', { name: /monitoring setup/i }),
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText(/0 stations selected/i)).toBeInTheDocument()
+  })
+
+  it('keeps map editing interactions disabled', () => {
+    expect(MAP_INTERACTION_OPTIONS).toMatchObject({
+      nodesDraggable: false,
+      nodesConnectable: false,
+      edgesReconnectable: false,
+      elementsSelectable: false,
+      deleteKeyCode: null,
+      panOnDrag: true,
+      zoomOnScroll: true,
+      zoomOnPinch: true,
+    })
+  })
+
+  it('selects and deselects an individual station', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const northgate = await screen.findByRole('button', {
+      name: /northgate station/i,
+    })
+
+    expect(northgate).toHaveAttribute('aria-pressed', 'false')
+
+    await user.click(northgate)
+
+    expect(northgate).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByLabelText('1 station selected')).toHaveTextContent('1')
+    expect(
+      screen.getByRole('button', {
+        name: /select cedar down via amber line/i,
+      }),
+    ).toBeEnabled()
+    expect(
+      screen.getByRole('list', { name: /selected stations/i }),
+    ).toHaveTextContent('Northgate')
+
+    await user.click(northgate)
+
+    expect(northgate).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByLabelText('0 stations selected')).toHaveTextContent('0')
+  })
+
+  it('supports keyboard selection and clearing every station', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const northgate = await screen.findByRole('button', {
+      name: /northgate station/i,
+    })
+    const central = await screen.findByRole('button', {
+      name: /central station, interchange/i,
+    })
+
+    northgate.focus()
+    await user.keyboard('{Enter}')
+
+    expect(northgate).toHaveFocus()
+
+    await user.click(central)
+
+    expect(screen.getByLabelText('2 stations selected')).toHaveTextContent('2')
+
+    await user.click(screen.getByRole('button', { name: /clear all/i }))
+
+    expect(northgate).toHaveAttribute('aria-pressed', 'false')
+    expect(central).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByLabelText('0 stations selected')).toHaveTextContent('0')
+    expect(screen.getByRole('button', { name: /clear all/i })).toBeDisabled()
+  })
+
+  it('uses arrow keys to select and focus the next ordered stations', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const northgate = await screen.findByRole('button', {
+      name: /northgate station/i,
+    })
+
+    await user.click(northgate)
+    await user.keyboard('{ArrowDown}')
+
+    const cedar = screen.getByRole('button', { name: /cedar station/i })
+    expect(cedar).toHaveAttribute('aria-pressed', 'true')
+    expect(cedar).toHaveFocus()
+
+    await user.keyboard('{ArrowDown}')
+
+    const central = screen.getByRole('button', {
+      name: /central station, interchange/i,
+    })
+    expect(central).toHaveAttribute('aria-pressed', 'true')
+    expect(central).toHaveFocus()
+    expect(screen.getByLabelText('3 stations selected')).toHaveTextContent('3')
+  })
+
+  it('does not move beyond a terminal station', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const northgate = await screen.findByRole('button', {
+      name: /northgate station/i,
+    })
+
+    await user.click(northgate)
+    await user.keyboard('{ArrowUp}')
+
+    expect(
+      screen.getByText('No station in the up direction from Northgate.'),
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText('1 station selected')).toHaveTextContent('1')
+  })
+
+  it('requires an explicit line-aware choice at a branch', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const market = await screen.findByRole('button', {
+      name: /market station/i,
+    })
+
+    await user.click(market)
+    await user.keyboard('{ArrowRight}')
+
+    expect(
+      screen.getByRole('dialog', { name: /choose a right branch/i }),
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText('1 station selected')).toHaveTextContent('1')
+
+    await user.click(
+      screen.getByRole('button', { name: /hillcrest.*hill branch/i }),
+    )
+
+    const hillcrest = screen.getByRole('button', {
+      name: /hillcrest station/i,
+    })
+    expect(hillcrest).toHaveAttribute('aria-pressed', 'true')
+    expect(hillcrest).toHaveFocus()
+    expect(screen.getByLabelText('2 stations selected')).toHaveTextContent('2')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+})
