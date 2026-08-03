@@ -1,7 +1,7 @@
 const SUBWAY_LINES = Object.freeze({
-  1: Object.freeze({ label: 'Line 1', emoji: '🟡', color: '#D5C82B' }),
-  2: Object.freeze({ label: 'Line 2', emoji: '🟢', color: '#008000' }),
-  4: Object.freeze({ label: 'Line 4', emoji: '🟣', color: '#B300B3' }),
+  1: Object.freeze({ label: 'Line 1', emoji: '🟡' }),
+  2: Object.freeze({ label: 'Line 2', emoji: '🟢' }),
+  4: Object.freeze({ label: 'Line 4', emoji: '🟣' }),
 })
 
 const RESTORED_PATTERN =
@@ -115,13 +115,13 @@ export function alertEmail(candidate, { manageUrl, now = new Date() }) {
   const imageUrl = getImageUrl(candidate.alert_url)
   const detailsUrl = imageUrl ? null : candidate.alert_url
   const lineHtml = (
-    lines.length > 0 ? lines : [{ label: 'TTC Subway', color: '#303b4f' }]
+    lines.length > 0 ? lines : [{ label: 'TTC Subway', emoji: '🚇' }]
   )
     .map(
       (line) =>
-        `<span style="display:inline-flex;align-items:center;gap:8px"><span aria-hidden="true" style="display:inline-block;width:16px;height:16px;border-radius:50%;background:${line.color};border:1px solid rgba(0,0,0,.18)"></span><span>${escapeHtml(line.label)}</span></span>`,
+        `${line.emoji ?? '🚇'}&nbsp;${escapeHtml(line.label).replaceAll(' ', '&nbsp;')}`,
     )
-    .join(' <span aria-hidden="true">/</span> ')
+    .join('&nbsp;/&nbsp;')
   const stationHtml = displayStations
     .map(
       (station) =>
@@ -143,7 +143,7 @@ export function alertEmail(candidate, { manageUrl, now = new Date() }) {
   ]
     .filter(Boolean)
     .join('\n')
-  const html = `<!doctype html><html lang="en"><body style="margin:0;background:#f3f5f7;font-family:Arial,sans-serif;color:#172035;line-height:1.5"><div style="max-width:640px;margin:0 auto;padding:24px 14px"><main style="background:#fff;border:1px solid #dde2e8;border-radius:16px;padding:24px"><h1 style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 18px;font-size:22px;line-height:1.3">${lineHtml}<span aria-hidden="true">:</span><span>${escapeHtml(displayStations.join(', '))} ${status.symbol}</span></h1><div style="margin-bottom:18px">${stationHtml}</div><p style="margin:0 0 16px;color:${status.color};font-weight:700">${status.symbol} ${escapeHtml(status.label)}</p><p style="margin:0 0 12px"><strong>${escapeHtml(alertText)}</strong></p>${candidate.description_text ? `<p style="margin:0 0 16px">${escapeHtml(candidate.description_text)}</p>` : ''}${imageUrl ? `<figure style="margin:20px 0"><img src="${escapeHtml(imageUrl)}" alt="TTC service alert information" width="592" style="display:block;max-width:100%;height:auto;border-radius:10px;border:1px solid #dde2e8"></figure>` : ''}${detailsUrl ? `<p><a href="${escapeHtml(detailsUrl)}">View TTC service details</a></p>` : ''}<p style="margin-top:22px"><a href="${escapeHtml(manageUrl)}">Manage your alerts</a></p><p style="margin:20px 0 0;color:#5d6b7e;font-size:13px">Sent because this alert matched a verified TTC subway monitoring subscription.</p></main></div></body></html>`
+  const html = `<!doctype html><html lang="en"><body style="margin:0;background:#f3f5f7;font-family:Arial,sans-serif;color:#172035;line-height:1.5"><div style="max-width:640px;margin:0 auto;padding:24px 14px"><main style="background:#fff;border:1px solid #dde2e8;border-radius:16px;padding:24px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;margin:0 0 18px"><tr><td style="padding:0"><h1 style="margin:0;font-size:22px;line-height:1.3"><span style="white-space:nowrap">${lineHtml}:</span>&nbsp;<span>${escapeHtml(displayStations.join(', '))} ${status.symbol}</span></h1></td></tr></table><div style="margin-bottom:18px">${stationHtml}</div><p style="margin:0 0 16px;color:${status.color};font-weight:700">${status.symbol} ${escapeHtml(status.label)}</p><p style="margin:0 0 12px"><strong>${escapeHtml(alertText)}</strong></p>${candidate.description_text ? `<p style="margin:0 0 16px">${escapeHtml(candidate.description_text)}</p>` : ''}${imageUrl ? `<figure style="margin:20px 0"><img src="${escapeHtml(imageUrl)}" alt="TTC service alert information" width="592" style="display:block;max-width:100%;height:auto;border-radius:10px;border:1px solid #dde2e8"></figure>` : ''}${detailsUrl ? `<p><a href="${escapeHtml(detailsUrl)}">View TTC service details</a></p>` : ''}<p style="margin-top:22px"><a href="${escapeHtml(manageUrl)}">Manage your alerts</a></p><p style="margin:20px 0 0;color:#5d6b7e;font-size:13px">Sent because this alert matched a verified TTC subway monitoring subscription.</p></main></div></body></html>`
 
   return { subject, text, html }
 }

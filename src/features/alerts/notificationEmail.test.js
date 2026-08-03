@@ -19,7 +19,10 @@ describe('TTC alert notification email', () => {
     )
 
     expect(email.subject).toBe('🟡 Line 1: Finch West ❌')
-    expect(email.html).toContain('background:#D5C82B')
+    expect(email.html).toContain('🟡&nbsp;Line&nbsp;1:')
+    expect(email.html).toContain('white-space:nowrap')
+    expect(email.html).toContain('role="presentation"')
+    expect(email.html).not.toContain('display:flex')
     expect(email.html).toContain('Service unavailable or disrupted')
     expect(email.text).toContain('Stations: Finch West')
   })
