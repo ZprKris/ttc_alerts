@@ -17,6 +17,6 @@ The station catalog is generated from TTC static GTFS. Set `TTC_GTFS_DIR` to an 
 
 GitHub Pages is configured at `https://zprkris.github.io/ttc_alerts/`. Enable Pages with GitHub Actions; `.github/workflows/deploy-pages.yml` publishes pushes to `main`. The workflow provides the public `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` values required for hosted Supabase integration.
 
-Supabase migrations and Edge Functions deploy separately. Configure `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `NOTIFICATIONS_SEND_SECRET`, and `PUBLIC_APP_URL` as server-only secrets.
+Supabase migrations and Edge Functions deploy separately. Configure `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `NOTIFICATIONS_SEND_SECRET`, and `PUBLIC_APP_URL` as server-only secrets. Supabase Cron invokes the protected monitoring pipeline every two minutes; `.github/workflows/monitor-alerts.yml` is retained only as a manual backup.
 
 See `docs/architecture.md` and `docs/supabase-setup.md` for security and operations.

@@ -65,3 +65,7 @@ entrypoint = "./functions/alerts-poll/index.js"
 [functions.notifications-send]
 verify_jwt = false
 entrypoint = "./functions/notifications-send/index.js"
+
+[functions.monitor-alerts]
+verify_jwt = false
+entrypoint = "./functions/monitor-alerts/index.js"

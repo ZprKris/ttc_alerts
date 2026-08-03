@@ -163,6 +163,34 @@ example `https://zprkris.github.io/ttc_alerts`). Deploy with
 protected `POST` invocation after each alert poll. Never put a Resend key,
 sender credential, or scheduler secret in a `VITE_` variable.
 
+## Scheduled monitoring
+
+The hosted project uses Supabase Cron instead of GitHub's best-effort scheduled
+workflow. The `ttc-alert-monitor` database job invokes the `monitor-alerts`
+Edge Function every two minutes. That function runs `alerts-poll` first and
+then `notifications-send`; it returns an error when polling fails, delivery
+fails, or any claimed email is rejected.
+
+Before applying the cron migration to a new hosted project, open Supabase Vault
+and create a secret named `ttc_cron_secret_key`. Its value must be the project's
+server-side secret key (`sb_secret_...`), never its publishable key. The cron
+migration reads that credential only through `vault.decrypted_secrets`, and the
+monitor endpoint accepts only keys present in its server-key environment.
+
+Deploy all three worker functions and apply the migrations:
+
+```sh
+supabase functions deploy alerts-poll --no-verify-jwt
+supabase functions deploy notifications-send --no-verify-jwt
+supabase functions deploy monitor-alerts --no-verify-jwt
+supabase db push
+```
+
+The GitHub `Poll TTC alerts` workflow has no schedule and remains available
+through **Run workflow** as a manual fallback. Cron configuration and recent
+executions can be inspected in Supabase under **Integrations > Cron**, or in
+the `cron.job` and `cron.job_run_details` database tables.
+
 ## Verification
 
 Run the repository checks:
