@@ -1,5 +1,38 @@
 import { getAuthRedirectUrl, requireSupabaseClient } from './supabaseClient.js'
 
+const rateLimitCodes = new Set([
+  'over_email_send_rate_limit',
+  'over_request_rate_limit',
+])
+const unavailableCodes = new Set([
+  'email_address_not_authorized',
+  'email_provider_disabled',
+  'otp_disabled',
+  'unexpected_failure',
+])
+
+function createEmailLinkError(error) {
+  let message = 'The verification email could not be sent. Try again.'
+  let isEmailDeliveryFailure = false
+
+  if (error?.status === 429 || rateLimitCodes.has(error?.code)) {
+    message =
+      'Too many sign-in emails were requested. Wait at least 60 seconds, then try again.'
+    isEmailDeliveryFailure = true
+  } else if (
+    Number(error?.status) >= 500 ||
+    unavailableCodes.has(error?.code)
+  ) {
+    message =
+      'The sign-in email service is temporarily unavailable. Try again in a few minutes.'
+    isEmailDeliveryFailure = true
+  }
+
+  const requestError = new Error(message)
+  requestError.isEmailDeliveryFailure = isEmailDeliveryFailure
+  return requestError
+}
+
 export async function requestEmailLink(email, { shouldCreateUser }) {
   const client = requireSupabaseClient()
   const { error } = await client.auth.signInWithOtp({
@@ -11,7 +44,7 @@ export async function requestEmailLink(email, { shouldCreateUser }) {
   })
 
   if (error) {
-    throw new Error('The verification email could not be sent. Try again.')
+    throw createEmailLinkError(error)
   }
 }
 

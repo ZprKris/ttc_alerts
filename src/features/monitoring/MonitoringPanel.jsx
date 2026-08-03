@@ -290,7 +290,11 @@ export default function MonitoringPanel({
 
     try {
       await requestEmailLink(values.email, { shouldCreateUser: false })
-    } catch {
+    } catch (error) {
+      if (error.isEmailDeliveryFailure) {
+        setSubmission({ kind: 'error', message: error.message })
+        return
+      }
       // Use the same response for unknown and known addresses to prevent account
       // enumeration through this public form.
     }
@@ -298,7 +302,7 @@ export default function MonitoringPanel({
     setSubmission({
       kind: 'link-sent',
       message:
-        'If a subscription exists for that address, a secure sign-in link is on its way. Your selected stations will be restored when it opens in this browser.',
+        'Request accepted. If a subscription exists for that address, a secure sign-in link is on its way. Check spam or junk, and wait at least 60 seconds before retrying. Your selected stations will be restored when it opens in this browser.',
     })
   }
 

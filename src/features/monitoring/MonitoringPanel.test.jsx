@@ -176,6 +176,28 @@ describe('secure monitoring preferences', () => {
     ).toEqual(['northgate'])
   })
 
+  it('shows an actionable error when Supabase rate-limits sign-in email', async () => {
+    const user = userEvent.setup()
+    const deliveryError = new Error(
+      'Too many sign-in emails were requested. Wait at least 60 seconds, then try again.',
+    )
+    deliveryError.isEmailDeliveryFailure = true
+    requestEmailLink.mockRejectedValue(deliveryError)
+    render(<MonitoringPanel {...createProps()} />)
+
+    await user.type(
+      screen.getByRole('textbox', { name: /email address/i }),
+      'rider@example.com',
+    )
+    await user.click(
+      screen.getByRole('button', { name: /sign in to existing alerts/i }),
+    )
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Wait at least 60 seconds',
+    )
+  })
+
   it('keeps the compact sign-in action without the existing-user prompt', () => {
     render(<MonitoringPanel {...createProps()} />)
 
