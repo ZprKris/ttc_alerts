@@ -132,7 +132,6 @@
   font-weight: 700;
 }
 
-.monitoring-form input[type='time'],
 .monitoring-form input[type='email'],
 .monitoring-form select {
   width: 100%;
@@ -142,27 +141,6 @@
   background: #fff;
   border: 1px solid #bdc7d5;
   border-radius: 9px;
-}
-
-.monitoring-form input[type='time'] {
-  color: #172035;
-  color-scheme: light;
-  -webkit-text-fill-color: #172035;
-  opacity: 1;
-}
-
-.monitoring-form input[type='time']::-webkit-datetime-edit,
-.monitoring-form input[type='time']::-webkit-datetime-edit-fields-wrapper,
-.monitoring-form input[type='time']::-webkit-datetime-edit-hour-field,
-.monitoring-form input[type='time']::-webkit-datetime-edit-minute-field,
-.monitoring-form input[type='time']::-webkit-datetime-edit-ampm-field {
-  color: #172035;
-  opacity: 1;
-}
-
-.monitoring-form input[type='time']::-webkit-calendar-picker-indicator {
-  cursor: pointer;
-  opacity: 0.72;
 }
 
 .monitoring-form input:hover,

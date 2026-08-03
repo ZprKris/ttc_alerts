@@ -23,6 +23,15 @@ import {
 import './monitoringPanel.css'
 
 const timeZoneOptions = getTimeZoneOptions()
+const timeOptions = Array.from({ length: 48 }, (_, index) => {
+  const hour = Math.floor(index / 2)
+  const minute = index % 2 === 0 ? '00' : '30'
+  const value = `${String(hour).padStart(2, '0')}:${minute}`
+  const displayHour = hour % 12 || 12
+  const period = hour < 12 ? 'AM' : 'PM'
+
+  return { value, label: `${displayHour}:${minute} ${period}` }
+})
 
 function createValuesFromDraft(initialDraft) {
   const initialValues = createInitialMonitoringValues()
@@ -399,10 +408,9 @@ export default function MonitoringPanel({
           <div className="time-grid">
             <label htmlFor="start-time">
               <span>Start time</span>
-              <input
+              <select
                 id="start-time"
                 name="startTime"
-                type="time"
                 value={values.startTime}
                 aria-describedby={
                   visibleErrors.startTime ? 'start-time-error' : undefined
@@ -411,21 +419,32 @@ export default function MonitoringPanel({
                 onChange={(event) =>
                   updateValue('startTime', event.target.value)
                 }
-              />
+              >
+                {timeOptions.map((time) => (
+                  <option key={time.value} value={time.value}>
+                    {time.label}
+                  </option>
+                ))}
+              </select>
             </label>
             <label htmlFor="end-time">
               <span>End time</span>
-              <input
+              <select
                 id="end-time"
                 name="endTime"
-                type="time"
                 value={values.endTime}
                 aria-describedby={
                   visibleErrors.endTime ? 'end-time-error' : undefined
                 }
                 aria-invalid={Boolean(visibleErrors.endTime)}
                 onChange={(event) => updateValue('endTime', event.target.value)}
-              />
+              >
+                {timeOptions.map((time) => (
+                  <option key={time.value} value={time.value}>
+                    {time.label}
+                  </option>
+                ))}
+              </select>
             </label>
           </div>
           {visibleErrors.startTime ? (

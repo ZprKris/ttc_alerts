@@ -53,6 +53,24 @@ describe('secure monitoring preferences', () => {
     })
   })
 
+  it('chooses monitoring times from half-hour select lists', async () => {
+    const user = userEvent.setup()
+    render(<MonitoringPanel {...createProps()} />)
+
+    const startTime = screen.getByRole('combobox', { name: /start time/i })
+    const endTime = screen.getByRole('combobox', { name: /end time/i })
+
+    expect(startTime).toHaveValue('07:00')
+    expect(endTime).toHaveValue('09:00')
+    expect(startTime).toHaveTextContent('7:30 AM')
+
+    await user.selectOptions(startTime, '07:30')
+    await user.selectOptions(endTime, '10:00')
+
+    expect(startTime).toHaveValue('07:30')
+    expect(endTime).toHaveValue('10:00')
+  })
+
   it('sends a verification link and stores no email or consent locally', async () => {
     const user = userEvent.setup()
     render(<MonitoringPanel {...createProps()} />)
