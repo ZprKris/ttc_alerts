@@ -1,4 +1,7 @@
 :root {
+  --accent-color: #30c7d8;
+  --accent-soft: #c8f3f7;
+  --accent-focus-ring: rgb(48 199 216 / 28%);
   color: #172035;
   background: #e8edf3;
   font-family:
@@ -15,6 +18,11 @@
 
 * {
   box-sizing: border-box;
+}
+
+::selection {
+  color: #102a32;
+  background: var(--accent-soft);
 }
 
 html {
@@ -35,6 +43,7 @@ button,
 input,
 select {
   font: inherit;
+  accent-color: var(--accent-color);
 }
 
 button:focus-visible,
