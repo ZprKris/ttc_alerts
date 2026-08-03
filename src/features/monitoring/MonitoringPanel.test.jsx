@@ -63,6 +63,7 @@ describe('secure monitoring preferences', () => {
     expect(startTime).toHaveValue('07:00')
     expect(endTime).toHaveValue('09:00')
     expect(startTime).toHaveTextContent('7:30 AM')
+    expect(screen.queryByLabelText(/time zone/i)).not.toBeInTheDocument()
 
     await user.selectOptions(startTime, '07:30')
     await user.selectOptions(endTime, '10:00')
@@ -127,7 +128,7 @@ describe('secure monitoring preferences', () => {
       expect(savePreferences).toHaveBeenCalledWith({
         startTime: '07:00',
         endTime: '09:00',
-        timeZone: expect.any(String),
+        timeZone: 'America/Toronto',
         isoWeekdays: [1, 2, 3, 4, 5],
         stationIds: ['northgate'],
         consent: true,

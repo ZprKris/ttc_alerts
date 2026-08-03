@@ -11,6 +11,7 @@ export const WEEKDAYS = Object.freeze([
 const weekdayDefaults = WEEKDAYS.slice(0, 5).map((day) => day.value)
 const timePattern = /^(?:[01]\d|2[0-3]):[0-5]\d$/
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+export const DEFAULT_TIME_ZONE = 'America/Toronto'
 
 const weekdayIsoValues = Object.freeze(
   Object.fromEntries(
@@ -18,37 +19,11 @@ const weekdayIsoValues = Object.freeze(
   ),
 )
 
-export function getDefaultTimeZone() {
-  return Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Toronto'
-}
-
-export function getTimeZoneOptions() {
-  const detectedTimeZone = getDefaultTimeZone()
-  const supportedTimeZones = Intl.supportedValuesOf
-    ? Intl.supportedValuesOf('timeZone')
-    : [
-        'America/Toronto',
-        'America/Vancouver',
-        'America/Edmonton',
-        'America/Winnipeg',
-        'America/Halifax',
-        'America/St_Johns',
-        'UTC',
-      ]
-
-  return [
-    detectedTimeZone,
-    ...new Set(['America/Toronto', 'UTC', ...supportedTimeZones]),
-  ].filter(
-    (timeZone, index, timeZones) => timeZones.indexOf(timeZone) === index,
-  )
-}
-
 export function createInitialMonitoringValues() {
   return {
     startTime: '07:00',
     endTime: '09:00',
-    timeZone: getDefaultTimeZone(),
+    timeZone: DEFAULT_TIME_ZONE,
     weekdays: weekdayDefaults,
     email: '',
     consent: false,

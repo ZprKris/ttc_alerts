@@ -11,10 +11,10 @@ import {
   unsubscribePreferences,
 } from '../../services/subscriptionApi.js'
 import {
+  DEFAULT_TIME_ZONE,
   WEEKDAYS,
   createInitialMonitoringValues,
   getScheduleKind,
-  getTimeZoneOptions,
   isoWeekdaysToValues,
   validateEmailAddress,
   validateMonitoringValues,
@@ -22,7 +22,6 @@ import {
 } from './monitoringForm.js'
 import './monitoringPanel.css'
 
-const timeZoneOptions = getTimeZoneOptions()
 const timeOptions = Array.from({ length: 48 }, (_, index) => {
   const hour = Math.floor(index / 2)
   const minute = index % 2 === 0 ? '00' : '30'
@@ -44,7 +43,6 @@ function createValuesFromDraft(initialDraft) {
     ...initialValues,
     startTime: initialDraft.startTime || initialValues.startTime,
     endTime: initialDraft.endTime || initialValues.endTime,
-    timeZone: initialDraft.timeZone || initialValues.timeZone,
     weekdays: initialDraft.weekdays?.length
       ? initialDraft.weekdays
       : initialValues.weekdays,
@@ -117,7 +115,7 @@ export default function MonitoringPanel({
             ...currentValues,
             startTime: result.preference.startTime,
             endTime: result.preference.endTime,
-            timeZone: result.preference.timeZone,
+            timeZone: DEFAULT_TIME_ZONE,
             weekdays: isoWeekdaysToValues(result.preference.isoWeekdays),
             consent: result.subscriptionStatus === 'active',
           }))
@@ -465,35 +463,6 @@ export default function MonitoringPanel({
             </p>
           ) : null}
         </fieldset>
-
-        <div className="form-field">
-          <label htmlFor="time-zone">Time zone</label>
-          <select
-            id="time-zone"
-            name="timeZone"
-            value={values.timeZone}
-            aria-describedby={`time-zone-help${
-              visibleErrors.timeZone ? ' time-zone-error' : ''
-            }`}
-            aria-invalid={Boolean(visibleErrors.timeZone)}
-            onChange={(event) => updateValue('timeZone', event.target.value)}
-          >
-            {timeZoneOptions.map((timeZone, index) => (
-              <option key={timeZone} value={timeZone}>
-                {timeZone}
-                {index === 0 ? ' (detected)' : ''}
-              </option>
-            ))}
-          </select>
-          <p className="field-help" id="time-zone-help">
-            Daylight-saving changes follow this IANA time zone automatically.
-          </p>
-          {visibleErrors.timeZone ? (
-            <p className="field-error" id="time-zone-error">
-              {visibleErrors.timeZone}
-            </p>
-          ) : null}
-        </div>
 
         <fieldset
           className="form-section weekday-section"
