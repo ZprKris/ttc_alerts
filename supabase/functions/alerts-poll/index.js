@@ -119,9 +119,10 @@ function isoTimestamp(seconds) {
 function normalizeAlertEntity(entity, catalog, now) {
   const details = extractAlertDetails(entity, now.getTime())
   const matching = expandAffectedStations(details, catalog)
+  const fingerprintDetails = { ...details }
+  delete fingerprintDetails.isFuture
   const fingerprintSource = JSON.stringify({
-    ...details,
-    activePeriods: details.activePeriods,
+    ...fingerprintDetails,
     ...matching,
   })
 
@@ -248,7 +249,10 @@ async function pollAlerts() {
         continue
       }
       const normalized = normalizeAlertEntity(entity, catalog, now)
-      if (normalized.matching.affectedStationIds.length === 0) {
+      if (
+        normalized.matching.lineIds.length === 0 ||
+        normalized.matching.affectedStationIds.length === 0
+      ) {
         continue
       }
       normalizedAlerts.push({
@@ -266,7 +270,7 @@ async function pollAlerts() {
         match_kind: normalized.matching.matchKind,
         active_periods: normalized.details.activePeriods,
         last_seen_at: now.toISOString(),
-        is_active: normalized.details.isActive,
+        is_active: normalized.details.isActive || normalized.details.isFuture,
         feed_timestamp: feedTimestamp,
       })
     }

@@ -36,6 +36,13 @@ const multipleAlertsMigration = readFileSync(
   ),
   'utf8',
 )
+const richEmailMigration = readFileSync(
+  join(
+    process.cwd(),
+    'supabase/migrations/202608030005_rich_subway_alert_emails.sql',
+  ),
+  'utf8',
+)
 
 describe('Supabase security boundaries', () => {
   it('forces RLS and denies direct authenticated mutations', () => {
@@ -112,5 +119,19 @@ describe('Supabase security boundaries', () => {
     expect(notificationsSender).toContain('text,')
     expect(notificationsSender).toContain('html,')
     expect(notificationsSender).not.toContain('VITE_')
+  })
+
+  it('excludes non-subway alerts and supplies trusted email presentation data', () => {
+    expect(alertsPoller).toContain('normalized.matching.lineIds.length === 0')
+    expect(alertsPoller).toContain('normalized.details.isFuture')
+    expect(richEmailMigration).toContain('event.route_ids')
+    expect(richEmailMigration).toContain('matched_station_names text[]')
+    expect(richEmailMigration).toContain(
+      'grant execute on function public.mark_alert_notification_skipped(uuid, text)',
+    )
+    expect(notificationsSender).toContain('isTtcSubwayRouteAlert')
+    expect(notificationsSender).toContain(
+      "admin.rpc('mark_alert_notification_skipped'",
+    )
   })
 })

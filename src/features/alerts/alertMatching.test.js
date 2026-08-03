@@ -76,6 +76,38 @@ describe('TTC alert matching', () => {
     )
   })
 
+  it('does not identify an LRT route as a known subway line at a shared station', () => {
+    const details = extractAlertDetails({
+      id: 'alert-lrt',
+      alert: {
+        informedEntity: [{ routeId: '6', stopId: 'stop-finch' }],
+        headerText: {
+          translation: [{ text: 'No LRT service at Finch West' }],
+        },
+      },
+    })
+
+    expect(expandAffectedStations(details, catalog)).toMatchObject({
+      lineIds: [],
+      affectedStationIds: ['finch'],
+    })
+  })
+
+  it('recognizes an alert whose active period starts in the future', () => {
+    const details = extractAlertDetails(
+      {
+        id: 'alert-future',
+        alert: {
+          informedEntity: [{ routeId: '1' }],
+          activePeriod: [{ start: 1785762000, end: 1785769200 }],
+        },
+      },
+      new Date('2026-08-03T04:00:00.000Z').getTime(),
+    )
+
+    expect(details).toMatchObject({ isActive: false, isFuture: true })
+  })
+
   it('handles same-day and overnight monitoring windows in the configured zone', () => {
     expect(
       matchesMonitoringWindow(

@@ -51,7 +51,9 @@ station preferences while retaining a minimal unsubscribed identity/consent
 record. See `docs/supabase-setup.md` for the schema and operational setup.
 
 The Phase 7 `alerts-poll` Edge Function uses the official TTC GTFS-Realtime subway
-binary feed. A standard GTFS-Realtime binding decodes alert entities, while a
+binary feed. The feed can also contain shared-stop LRT notices, so the poller
+requires a recognized TTC subway route (Line 1, 2, or 4) before creating a
+notification. A standard GTFS-Realtime binding decodes alert entities, while a
 pure matching module maps route/stop selectors and phrases such as “between A
 and B” onto ordered station ranges. Known line alerts fall back to every station
 on that line; alerts that cannot be mapped confidently are retained only when
@@ -60,9 +62,11 @@ stored IANA-time-zone schedule and create pending, deduplicated notification
 candidates. The poller uses a server-only service-role secret and a separate
 poll secret; neither is exposed to the browser. Phase 8’s Resend worker claims
 those candidates and subscription confirmation/unsubscribe events with row
-locks, sends plain-text and accessible HTML messages, and records sent/failed
-delivery state. Supabase Auth continues to send passwordless confirmation and
-preference-management magic links.
+locks, sends plain-text and accessible HTML messages, and records sent, skipped,
+or failed delivery state. Alert subjects use TTC line-colour circles, readable
+station names, and unavailable, restored, or future-service status symbols. TTC
+poster-image URLs are embedded in the HTML message. Supabase Auth continues to
+send passwordless confirmation and preference-management magic links.
 
 ## Quality and deployment
 

@@ -166,6 +166,15 @@ example `https://zprkris.github.io/ttc_alerts`). Deploy with
 protected `POST` invocation after each alert poll. Never put a Resend key,
 sender credential, or scheduler secret in a `VITE_` variable.
 
+Service-alert subjects follow the compact form `🟡 Line 1: Finch West ❌`.
+Line 2 uses a green circle and Line 4 a purple circle. A green check marks a
+restoration notice, while `⏱️` distinguishes an upcoming service change from a
+current disruption. Station IDs are resolved to display names before delivery,
+and an HTTPS image URL supplied by TTC is embedded in the HTML message. Route 6
+and other LRT-only notices are rejected even when they share a stop such as Finch
+West with the subway; only alerts identifying TTC subway Lines 1, 2, or 4 are
+eligible for delivery.
+
 ## Scheduled monitoring
 
 The hosted project uses Supabase Cron instead of GitHub's best-effort scheduled

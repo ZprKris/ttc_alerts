@@ -46,6 +46,10 @@ export function extractAlertDetails(entity, now = Date.now()) {
         (period.start === null || now >= period.start) &&
         (period.end === null || now < period.end),
     )
+  const isFuture =
+    activePeriods.length > 0 &&
+    !isActive &&
+    activePeriods.some((period) => period.start !== null && now < period.start)
   const informedEntities = alert.informedEntity ?? []
   const routeIds = unique(
     informedEntities
@@ -75,6 +79,7 @@ export function extractAlertDetails(entity, now = Date.now()) {
     stopIds,
     activePeriods,
     isActive,
+    isFuture,
   }
 }
 

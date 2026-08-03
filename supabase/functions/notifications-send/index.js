@@ -1,4 +1,8 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.111.0'
+import {
+  alertEmail,
+  isTtcSubwayRouteAlert,
+} from '../_shared/notificationEmail.js'
 
 const supabaseUrl = globalThis.Deno.env.get('SUPABASE_URL')
 const serviceRoleKey = globalThis.Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
@@ -28,30 +32,6 @@ function escapeHtml(value) {
 
 function appManageUrl() {
   return `${publicAppUrl.replace(/\/$/, '')}/?manage=1`
-}
-
-function alertEmail(candidate) {
-  const subject = candidate.header_text
-    ? `[TTC Station Watch] ${candidate.header_text}`
-    : '[TTC Station Watch] Service alert'
-  const stations = candidate.matched_station_ids.join(', ')
-  const manageUrl = appManageUrl()
-  const text = [
-    'TTC Station Watch service alert',
-    '',
-    candidate.header_text || 'A service alert affects stations you monitor.',
-    candidate.description_text || '',
-    `Matched stations: ${stations}`,
-    '',
-    candidate.alert_url ? `TTC details: ${candidate.alert_url}` : '',
-    `Manage preferences or unsubscribe: ${manageUrl}`,
-    '',
-    'You are receiving this message because you verified a TTC Station Watch monitoring preference.',
-  ]
-    .filter(Boolean)
-    .join('\n')
-  const html = `<!doctype html><html lang="en"><body style="font-family:Arial,sans-serif;color:#172035;line-height:1.5"><h1 style="font-size:22px">TTC Station Watch service alert</h1><p><strong>${escapeHtml(candidate.header_text || 'A service alert affects stations you monitor.')}</strong></p>${candidate.description_text ? `<p>${escapeHtml(candidate.description_text)}</p>` : ''}<p><strong>Matched stations:</strong> ${escapeHtml(stations)}</p>${candidate.alert_url ? `<p><a href="${escapeHtml(candidate.alert_url)}">View TTC service details</a></p>` : ''}<p><a href="${escapeHtml(manageUrl)}">Manage preferences or unsubscribe</a></p><p style="color:#5d6b7e;font-size:13px">You are receiving this message because you verified a TTC Station Watch monitoring preference.</p></body></html>`
-  return { subject, text, html }
 }
 
 function subscriptionEmail(event) {
@@ -116,10 +96,22 @@ async function sendNotifications() {
   }
 
   let sent = 0
+  let skipped = 0
   let failed = 0
   for (const alert of alerts ?? []) {
     try {
-      await sendWithResend({ to: alert.email, ...alertEmail(alert) })
+      if (!isTtcSubwayRouteAlert(alert.route_ids)) {
+        await admin.rpc('mark_alert_notification_skipped', {
+          p_candidate_id: alert.candidate_id,
+          p_reason: 'The alert does not identify TTC subway Line 1, 2, or 4.',
+        })
+        skipped += 1
+        continue
+      }
+      await sendWithResend({
+        to: alert.email,
+        ...alertEmail(alert, { manageUrl: appManageUrl() }),
+      })
       await admin.rpc('mark_alert_notification_sent', {
         p_candidate_id: alert.candidate_id,
       })
@@ -150,6 +142,7 @@ async function sendNotifications() {
   return {
     claimed: (alerts?.length ?? 0) + (subscriptions?.length ?? 0),
     sent,
+    skipped,
     failed,
   }
 }
