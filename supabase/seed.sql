@@ -1,2 +1,2 @@
 -- Generated official TTC subway catalog is maintained in seed-ttc.sql.
-\ir seed-ttc.sql
+-- config.toml lists that file directly because remote seeding does not process psql \ir commands.

@@ -12,14 +12,22 @@ port = 54322
 shadow_port = 54320
 major_version = 15
 
+[db.seed]
+enabled = true
+sql_paths = ["./seed-ttc.sql"]
+
 [studio]
 enabled = true
 port = 54323
 
 [auth]
 enabled = true
-site_url = "http://localhost:5173"
-additional_redirect_urls = ["http://localhost:5173/"]
+site_url = "https://zprkris.github.io/ttc_alerts/"
+additional_redirect_urls = [
+  "http://localhost:5173/",
+  "http://localhost:5173/**",
+  "https://zprkris.github.io/ttc_alerts/",
+]
 jwt_expiry = 3600
 enable_signup = true
 
@@ -27,6 +35,12 @@ enable_signup = true
 enable_signup = true
 double_confirm_changes = true
 enable_confirmations = true
+max_frequency = "1m"
+otp_length = 8
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
 
 [edge_runtime]
 enabled = true
@@ -34,9 +48,12 @@ policy = "per_worker"
 
 [functions.preferences]
 verify_jwt = false
+entrypoint = "./functions/preferences/index.js"
 
 [functions.alerts-poll]
 verify_jwt = false
+entrypoint = "./functions/alerts-poll/index.js"
 
 [functions.notifications-send]
 verify_jwt = false
+entrypoint = "./functions/notifications-send/index.js"

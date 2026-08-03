@@ -23,8 +23,8 @@ jobs:
       - uses: actions/configure-pages@v5
       - run: npm run build
         env:
-          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_URL: https://qvlphhsgkrvcqvjhqkhg.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_92JZQNiZRtAGcFlNNnRogA_awd-8AI1
       - uses: actions/upload-pages-artifact@v4
         with: { path: dist }
 
