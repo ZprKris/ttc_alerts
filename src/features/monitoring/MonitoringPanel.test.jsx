@@ -107,13 +107,14 @@ describe('secure monitoring preferences', () => {
 
   it('saves through the authenticated preference service', async () => {
     const user = userEvent.setup()
+    const props = createProps()
     useSubscriptionSession.mockReturnValue({
       status: 'ready',
       isConfigured: true,
       user: { id: 'user-id', email: 'verified@example.com' },
       signOut: vi.fn(),
     })
-    render(<MonitoringPanel {...createProps()} />)
+    render(<MonitoringPanel {...props} />)
 
     await waitFor(() => expect(loadPreferences).toHaveBeenCalledOnce())
     await user.click(
@@ -138,6 +139,7 @@ describe('secure monitoring preferences', () => {
     expect(screen.getByRole('status')).toHaveTextContent(
       'new verified alert was saved securely',
     )
+    expect(props.onClearSelection).toHaveBeenCalledOnce()
     await user.click(screen.getByRole('tab', { name: /set up/i }))
     expect(
       screen.getByRole('textbox', { name: /email address/i }),
@@ -155,7 +157,7 @@ describe('secure monitoring preferences', () => {
     )
     await user.click(
       screen.getByRole('button', {
-        name: /manage an existing subscription/i,
+        name: /sign in to existing alerts/i,
       }),
     )
 
@@ -166,6 +168,20 @@ describe('secure monitoring preferences', () => {
     expect(requestEmailLink).toHaveBeenCalledWith('unknown@example.com', {
       shouldCreateUser: false,
     })
+  })
+
+  it('guides an existing user directly to password-free sign in', async () => {
+    const user = userEvent.setup()
+    render(<MonitoringPanel {...createProps()} />)
+
+    expect(screen.getByText('Already have alerts?')).toBeInTheDocument()
+    expect(screen.getByText(/no password is needed/i)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /^sign in$/i }))
+
+    expect(
+      screen.getByRole('textbox', { name: /email address/i }),
+    ).toHaveFocus()
   })
 
   it('shows the saved subscription tab only to authenticated users', async () => {

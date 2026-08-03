@@ -85,6 +85,7 @@ export default function MonitoringPanel({
   const [expandedPreferenceId, setExpandedPreferenceId] = useState(null)
   const [confirmingDeleteId, setConfirmingDeleteId] = useState(null)
   const loadedUserId = useRef(null)
+  const emailInputRef = useRef(null)
   const {
     status: authStatus,
     isConfigured,
@@ -252,6 +253,7 @@ export default function MonitoringPanel({
         ...currentPreferences,
         savedPreference,
       ])
+      onClearSelection()
       setExpandedPreferenceId(result.preferenceId)
       setActiveTab('alerts')
       setSubmission({
@@ -297,6 +299,11 @@ export default function MonitoringPanel({
       message:
         'If a subscription exists for that address, a secure management link is on its way.',
     })
+  }
+
+  const handleStartSignIn = () => {
+    setSubmission({ kind: 'idle', message: '' })
+    emailInputRef.current?.focus()
   }
 
   const handleSignOut = async () => {
@@ -407,6 +414,20 @@ export default function MonitoringPanel({
         ) : null}
         {isConfigured && authStatus === 'error' ? (
           <p>A secure session could not be restored.</p>
+        ) : null}
+        {isConfigured && authStatus === 'ready' && !user ? (
+          <div className="existing-user-prompt">
+            <div>
+              <strong>Already have alerts?</strong>
+              <p>
+                Sign in with your email to view, add, or delete subscriptions.
+                No password is needed.
+              </p>
+            </div>
+            <button type="button" onClick={handleStartSignIn}>
+              Sign in
+            </button>
+          </div>
         ) : null}
         {user ? (
           <div className="verified-session">
@@ -737,6 +758,7 @@ export default function MonitoringPanel({
         <div className="form-field">
           <label htmlFor="monitoring-email">Email address</label>
           <input
+            ref={emailInputRef}
             id="monitoring-email"
             name="email"
             type="email"
@@ -762,6 +784,17 @@ export default function MonitoringPanel({
             </p>
           ) : null}
         </div>
+
+        {!user ? (
+          <button
+            className="management-link-button"
+            type="button"
+            disabled={isSubmitting}
+            onClick={handleManagementLink}
+          >
+            Sign in to existing alerts
+          </button>
+        ) : null}
 
         <div className="consent-field">
           <label>
@@ -798,17 +831,6 @@ export default function MonitoringPanel({
                 ? 'Save verified preferences'
                 : 'Verify email & continue'}
         </button>
-
-        {!user ? (
-          <button
-            className="management-link-button"
-            type="button"
-            disabled={isSubmitting}
-            onClick={handleManagementLink}
-          >
-            Manage an existing subscription
-          </button>
-        ) : null}
 
         {submission.message ? (
           <div

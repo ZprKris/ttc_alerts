@@ -334,6 +334,50 @@
   border-radius: 9px;
 }
 
+.existing-user-prompt {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  color: #344258;
+  background: #eef9fb;
+  border: 1px solid #a9dce2;
+  border-radius: 10px;
+}
+
+.existing-user-prompt strong {
+  font-size: 0.75rem;
+}
+
+.existing-user-prompt p {
+  margin: 3px 0 0;
+  color: #607086;
+  font-size: 0.67rem;
+  line-height: 1.4;
+}
+
+.existing-user-prompt button {
+  min-height: 38px;
+  padding: 7px 12px;
+  color: #173e47;
+  font-size: 0.7rem;
+  font-weight: 850;
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid #72cbd5;
+  border-radius: 8px;
+}
+
+.existing-user-prompt button:hover {
+  background: #dcf5f8;
+}
+
+.existing-user-prompt button:focus-visible {
+  outline: 3px solid var(--accent-focus-ring);
+  outline-offset: 2px;
+}
+
 .verified-session > span {
   display: grid;
   width: 20px;
@@ -658,6 +702,14 @@
   .time-grid,
   .subscription-details {
     grid-template-columns: 1fr;
+  }
+
+  .existing-user-prompt {
+    grid-template-columns: 1fr;
+  }
+
+  .existing-user-prompt button {
+    width: 100%;
   }
 
   .subscription-card .unsubscribe-confirmation > div {
