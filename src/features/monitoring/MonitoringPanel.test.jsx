@@ -26,6 +26,7 @@ const station = { id: 'northgate', name: 'Northgate' }
 function createProps(overrides = {}) {
   return {
     initialDraft: null,
+    allStations: [station],
     selectedStations: [station],
     selectedCount: 1,
     onClearSelection: vi.fn(),
@@ -166,6 +167,44 @@ describe('secure monitoring preferences', () => {
     })
   })
 
+  it('shows the saved subscription tab only to authenticated users', async () => {
+    const { rerender } = render(<MonitoringPanel {...createProps()} />)
+
+    expect(
+      screen.queryByRole('tab', { name: /my alerts/i }),
+    ).not.toBeInTheDocument()
+
+    useSubscriptionSession.mockReturnValue({
+      status: 'ready',
+      isConfigured: true,
+      user: { id: 'user-id', email: 'verified@example.com' },
+      signOut: vi.fn(),
+    })
+    loadPreferences.mockResolvedValue({
+      subscriptionStatus: 'active',
+      preference: {
+        startTime: '07:30',
+        endTime: '10:00',
+        timeZone: 'America/Toronto',
+        isoWeekdays: [1, 3, 5],
+        stationIds: ['northgate'],
+      },
+    })
+    rerender(<MonitoringPanel {...createProps()} />)
+
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('tab', { name: /my alerts/i }))
+
+    expect(
+      screen.getByRole('heading', { name: /station service alerts/i }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('7:30 AM–10:00 AM')).toBeInTheDocument()
+    expect(screen.getByText('Mon, Wed, Fri')).toBeInTheDocument()
+    expect(
+      screen.getByRole('list', { name: /subscribed stations/i }),
+    ).toHaveTextContent('Northgate')
+  })
+
   it('requires confirmation before deleting saved preferences', async () => {
     const user = userEvent.setup()
     const props = createProps()
@@ -187,15 +226,14 @@ describe('secure monitoring preferences', () => {
     })
     render(<MonitoringPanel {...props} />)
 
+    await user.click(await screen.findByRole('tab', { name: /my alerts/i }))
     await user.click(
-      await screen.findByRole('button', {
-        name: /unsubscribe and remove preferences/i,
-      }),
+      screen.getByRole('button', { name: /remove monitoring subscription/i }),
     )
     expect(unsubscribePreferences).not.toHaveBeenCalled()
 
     await user.click(
-      screen.getByRole('button', { name: /confirm unsubscribe/i }),
+      screen.getByRole('button', { name: /^remove subscription$/i }),
     )
 
     await waitFor(() => expect(unsubscribePreferences).toHaveBeenCalledOnce())

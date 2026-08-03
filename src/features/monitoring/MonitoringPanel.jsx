@@ -51,8 +51,27 @@ function createValuesFromDraft(initialDraft) {
   }
 }
 
+function timeLabel(value) {
+  return timeOptions.find((option) => option.value === value)?.label ?? value
+}
+
+function weekdayLabels(isoWeekdays = []) {
+  return isoWeekdays
+    .map((isoWeekday) => WEEKDAYS[isoWeekday - 1]?.shortLabel)
+    .filter(Boolean)
+}
+
+function TrashIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-2 6h10l-.7 11H7.7L7 9Zm3 2v7m4-7v7" />
+    </svg>
+  )
+}
+
 export default function MonitoringPanel({
   initialDraft,
+  allStations = [],
   selectedStations,
   selectedCount,
   onClearSelection,
@@ -64,6 +83,8 @@ export default function MonitoringPanel({
   const [errors, setErrors] = useState({})
   const [submission, setSubmission] = useState({ kind: 'idle', message: '' })
   const [hasSubscription, setHasSubscription] = useState(false)
+  const [savedPreference, setSavedPreference] = useState(null)
+  const [activeTab, setActiveTab] = useState('setup')
   const [confirmingUnsubscribe, setConfirmingUnsubscribe] = useState(false)
   const loadedUserId = useRef(null)
   const {
@@ -109,6 +130,7 @@ export default function MonitoringPanel({
         }
 
         setHasSubscription(result.subscriptionStatus === 'active')
+        setSavedPreference(result.preference)
 
         if (result.preference) {
           setValues((currentValues) => ({
@@ -162,6 +184,19 @@ export default function MonitoringPanel({
   const handleClearSelection = () => {
     onClearSelection()
     setSubmission({ kind: 'idle', message: '' })
+  }
+
+  const handleTabKeyDown = (event) => {
+    if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) {
+      return
+    }
+
+    event.preventDefault()
+    const nextTab = activeTab === 'setup' ? 'alerts' : 'setup'
+    setActiveTab(nextTab)
+    requestAnimationFrame(() => {
+      document.getElementById(`monitoring-${nextTab}-tab`)?.focus()
+    })
   }
 
   const handleSubmit = async (event) => {
@@ -221,6 +256,13 @@ export default function MonitoringPanel({
       })
       clearPendingPreferenceDraft()
       setHasSubscription(true)
+      setSavedPreference({
+        startTime: values.startTime,
+        endTime: values.endTime,
+        timeZone: values.timeZone,
+        isoWeekdays: weekdayValuesToIso(values.weekdays),
+        stationIds,
+      })
       setSubmission({
         kind: 'saved',
         message: 'Your verified monitoring preferences were saved securely.',
@@ -274,6 +316,8 @@ export default function MonitoringPanel({
       onReplaceSelection([])
       setValues(createInitialMonitoringValues())
       setHasSubscription(false)
+      setSavedPreference(null)
+      setActiveTab('setup')
       setSubmission({ kind: 'idle', message: '' })
     } catch (error) {
       setSubmission({ kind: 'error', message: error.message })
@@ -289,6 +333,7 @@ export default function MonitoringPanel({
       onClearSelection()
       setValues(createInitialMonitoringValues())
       setHasSubscription(false)
+      setSavedPreference(null)
       setConfirmingUnsubscribe(false)
       setSubmission({
         kind: 'unsubscribed',
@@ -306,6 +351,15 @@ export default function MonitoringPanel({
     'saving',
     'unsubscribing',
   ].includes(submission.kind)
+  const showSetup = !user || activeTab === 'setup'
+  const savedStations = (savedPreference?.stationIds ?? []).map(
+    (stationId) =>
+      allStations.find((station) => station.id === stationId) ?? {
+        id: stationId,
+        name: stationId,
+      },
+  )
+  const savedWeekdays = weekdayLabels(savedPreference?.isoWeekdays)
 
   return (
     <aside className="monitoring-card" aria-label="Monitoring setup">
@@ -314,26 +368,28 @@ export default function MonitoringPanel({
           <p className="eyebrow">Your alert</p>
           <h2>Monitoring setup</h2>
         </div>
-        <div className="selection-actions">
-          <span
-            className="selection-count"
-            aria-label={stationCountLabel}
-            aria-live="polite"
-          >
-            {selectedCount}
-          </span>
-          <button
-            className="clear-selection-button"
-            type="button"
-            disabled={selectedCount === 0}
-            onClick={handleClearSelection}
-          >
-            Clear all
-          </button>
-        </div>
+        {showSetup ? (
+          <div className="selection-actions">
+            <span
+              className="selection-count"
+              aria-label={stationCountLabel}
+              aria-live="polite"
+            >
+              {selectedCount}
+            </span>
+            <button
+              className="clear-selection-button"
+              type="button"
+              disabled={selectedCount === 0}
+              onClick={handleClearSelection}
+            >
+              Clear all
+            </button>
+          </div>
+        ) : null}
       </div>
 
-      {selectedCount === 0 ? (
+      {showSetup && selectedCount === 0 ? (
         <div className="selection-empty">
           <span className="empty-ring" aria-hidden="true" />
           <div>
@@ -341,7 +397,7 @@ export default function MonitoringPanel({
             <p>Select any station on the map to begin.</p>
           </div>
         </div>
-      ) : (
+      ) : showSetup ? (
         <div className="selection-summary">
           <p>Selected stations</p>
           <ul aria-label="Selected stations">
@@ -353,7 +409,7 @@ export default function MonitoringPanel({
             ))}
           </ul>
         </div>
-      )}
+      ) : null}
 
       <div className="auth-status">
         {!isConfigured ? (
@@ -383,7 +439,153 @@ export default function MonitoringPanel({
 
       <div className="panel-rule" />
 
-      <form className="monitoring-form" noValidate onSubmit={handleSubmit}>
+      {user ? (
+        <div
+          className="monitoring-tabs"
+          role="tablist"
+          aria-label="Monitoring views"
+        >
+          <button
+            id="monitoring-setup-tab"
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'setup'}
+            aria-controls="monitoring-setup-panel"
+            tabIndex={activeTab === 'setup' ? 0 : -1}
+            onKeyDown={handleTabKeyDown}
+            onClick={() => setActiveTab('setup')}
+          >
+            Set up
+          </button>
+          <button
+            id="monitoring-alerts-tab"
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'alerts'}
+            aria-controls="monitoring-alerts-panel"
+            tabIndex={activeTab === 'alerts' ? 0 : -1}
+            onKeyDown={handleTabKeyDown}
+            onClick={() => setActiveTab('alerts')}
+          >
+            My alerts
+            {hasSubscription ? (
+              <span aria-label="1 active subscription">1</span>
+            ) : null}
+          </button>
+        </div>
+      ) : null}
+
+      {user && activeTab === 'alerts' ? (
+        <section
+          id="monitoring-alerts-panel"
+          className="subscriptions-panel"
+          role="tabpanel"
+          aria-labelledby="monitoring-alerts-tab"
+        >
+          {hasSubscription && savedPreference ? (
+            <article className="subscription-card">
+              <div className="subscription-card-heading">
+                <div>
+                  <span className="subscription-status">Active</span>
+                  <h3>Station service alerts</h3>
+                </div>
+                <button
+                  className="trash-subscription-button"
+                  type="button"
+                  title="Remove subscription"
+                  aria-label="Remove monitoring subscription"
+                  onClick={() => setConfirmingUnsubscribe(true)}
+                >
+                  <TrashIcon />
+                </button>
+              </div>
+
+              <dl className="subscription-details">
+                <div>
+                  <dt>Hours</dt>
+                  <dd>
+                    {timeLabel(savedPreference.startTime)}–
+                    {timeLabel(savedPreference.endTime)}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Days</dt>
+                  <dd>{savedWeekdays.join(', ')}</dd>
+                </div>
+              </dl>
+
+              <div className="subscription-stations">
+                <p>Stations ({savedStations.length})</p>
+                <ul aria-label="Subscribed stations">
+                  {savedStations.map((station) => (
+                    <li key={station.id}>{station.name}</li>
+                  ))}
+                </ul>
+              </div>
+
+              {confirmingUnsubscribe ? (
+                <div className="unsubscribe-confirmation">
+                  <strong>Remove this monitoring subscription?</strong>
+                  <p>
+                    Its saved schedule and all station selections will be
+                    deleted.
+                  </p>
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmingUnsubscribe(false)}
+                    >
+                      Keep monitoring
+                    </button>
+                    <button
+                      className="danger-button"
+                      type="button"
+                      disabled={submission.kind === 'unsubscribing'}
+                      onClick={handleUnsubscribe}
+                    >
+                      {submission.kind === 'unsubscribing'
+                        ? 'Removing…'
+                        : 'Remove subscription'}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </article>
+          ) : (
+            <div className="subscriptions-empty">
+              <span className="empty-ring" aria-hidden="true" />
+              <strong>No active alerts</strong>
+              <p>Save a station schedule to see it here.</p>
+              <button type="button" onClick={() => setActiveTab('setup')}>
+                Set up monitoring
+              </button>
+            </div>
+          )}
+
+          {submission.message ? (
+            <div
+              className={
+                submission.kind === 'error'
+                  ? 'submission-message is-error'
+                  : 'submission-message is-success'
+              }
+              role={submission.kind === 'error' ? 'alert' : 'status'}
+            >
+              {submission.message}
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
+      <form
+        id="monitoring-setup-panel"
+        className="monitoring-form"
+        role={user ? 'tabpanel' : undefined}
+        aria-labelledby={user ? 'monitoring-setup-tab' : undefined}
+        hidden={!showSetup}
+        noValidate
+        onSubmit={handleSubmit}
+      >
         {Object.keys(visibleErrors).length > 0 ? (
           <div className="form-error-summary" role="alert">
             <strong>Check the following:</strong>
@@ -581,42 +783,6 @@ export default function MonitoringPanel({
             role={submission.kind === 'error' ? 'alert' : 'status'}
           >
             {submission.message}
-          </div>
-        ) : null}
-
-        {user && hasSubscription ? (
-          <div className="unsubscribe-section">
-            {!confirmingUnsubscribe ? (
-              <button
-                type="button"
-                onClick={() => setConfirmingUnsubscribe(true)}
-              >
-                Unsubscribe and remove preferences
-              </button>
-            ) : (
-              <div className="unsubscribe-confirmation">
-                <strong>Remove this monitoring subscription?</strong>
-                <p>
-                  The saved schedule and station selections will be deleted.
-                </p>
-                <div>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmingUnsubscribe(false)}
-                  >
-                    Keep monitoring
-                  </button>
-                  <button
-                    className="danger-button"
-                    type="button"
-                    disabled={submission.kind === 'unsubscribing'}
-                    onClick={handleUnsubscribe}
-                  >
-                    Confirm unsubscribe
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         ) : null}
 

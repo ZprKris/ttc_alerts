@@ -83,6 +83,7 @@ export default function App() {
         />
         <MonitoringPanel
           initialDraft={initialDraft}
+          allStations={stations}
           selectedStations={selectedStations}
           selectedCount={selectedCount}
           onClearSelection={handleClearSelection}
