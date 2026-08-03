@@ -123,7 +123,7 @@ begin
   select
     candidate.id,
     candidate.user_id,
-    account.email,
+    account.email::text,
     candidate.alert_id,
     candidate.content_hash,
     event.header_text,
@@ -205,7 +205,7 @@ begin
     where event.id = available.id
     returning event.*
   )
-  select event.id, event.user_id, account.email, event.event_type
+  select event.id, event.user_id, account.email::text, event.event_type
   from claimed as event
   join auth.users as account on account.id = event.user_id;
 end;
@@ -269,4 +269,3 @@ grant execute on function public.mark_subscription_email_sent(uuid)
 to service_role;
 grant execute on function public.mark_subscription_email_failed(uuid, text)
 to service_role;
-
