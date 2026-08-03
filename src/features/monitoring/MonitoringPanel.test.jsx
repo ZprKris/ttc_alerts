@@ -176,18 +176,13 @@ describe('secure monitoring preferences', () => {
     ).toEqual(['northgate'])
   })
 
-  it('guides an existing user directly to password-free sign in', async () => {
-    const user = userEvent.setup()
+  it('keeps the compact sign-in action without the existing-user prompt', () => {
     render(<MonitoringPanel {...createProps()} />)
 
-    expect(screen.getByText('Already have alerts?')).toBeInTheDocument()
-    expect(screen.getByText(/no password is needed/i)).toBeInTheDocument()
-
-    await user.click(screen.getByRole('button', { name: /^sign in$/i }))
-
+    expect(screen.queryByText('Already have alerts?')).not.toBeInTheDocument()
     expect(
-      screen.getByRole('textbox', { name: /email address/i }),
-    ).toHaveFocus()
+      screen.getByRole('button', { name: /sign in to existing alerts/i }),
+    ).toBeInTheDocument()
   })
 
   it('shows the saved subscription tab only to authenticated users', async () => {
