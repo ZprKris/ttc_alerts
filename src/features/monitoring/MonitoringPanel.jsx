@@ -302,10 +302,10 @@ export default function MonitoringPanel({
     })
   }
 
-  const handleStartSignIn = () => {
-    setSubmission({ kind: 'idle', message: '' })
-    emailInputRef.current?.focus()
-  }
+  // const handleStartSignIn = () => {
+  //   setSubmission({ kind: 'idle', message: '' })
+  //   emailInputRef.current?.focus()
+  // }
 
   const handleSignOut = async () => {
     try {
