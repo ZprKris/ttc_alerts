@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>TTC Station Watch</title>
+  <circle cx="32" cy="32" r="30" fill="#30c7d8"/>
+  <path
+    d="M19 18c0-6 5-10 13-10s13 4 13 10v22c0 5-4 9-9 9h-8c-5 0-9-4-9-9V18Z"
+    fill="#fff"
+  />
+  <path d="M23 18c0-3 3-5 9-5s9 2 9 5v9H23v-9Z" fill="#167985"/>
+  <circle cx="26" cy="36" r="3" fill="#167985"/>
+  <circle cx="38" cy="36" r="3" fill="#167985"/>
+  <path
+    d="M27 41c1.5 1.5 3.2 2.2 5 2.2s3.5-.7 5-2.2"
+    fill="none"
+    stroke="#167985"
+    stroke-linecap="round"
+    stroke-width="2.5"
+  />
+  <path
+    d="m23 48-5 8m23-8 5 8M23 54h18"
+    fill="none"
+    stroke="#fff"
+    stroke-linecap="round"
+    stroke-width="3.5"
+  />
+</svg>
