@@ -68,8 +68,10 @@ development only. Do not seed those placeholders into production; official TTC
 station records are scheduled for Phase 9.
 
 The local Auth site URL and redirect are declared in `supabase/config.toml`.
-Magic-link drafts use `sessionStorage` in the originating browser and contain
-only schedule and station fields—not email or consent. A user who opens the
+Magic-link drafts use one-hour `localStorage` in the originating browser so a
+verification or sign-in link opened in a new tab can restore the selected
+stations and schedule. Drafts contain only schedule and station fields—not email
+or consent. A user who opens the
 link in another browser can still authenticate, but must re-enter an unsaved
 draft.
 

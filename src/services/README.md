@@ -6,8 +6,8 @@ This directory contains public browser adapters only:
   environment variables.
 - `subscriptionApi.js` sends magic links and calls the authenticated preference
   Edge Function.
-- `preferenceDraft.js` temporarily retains non-personal schedule/station fields
-  in `sessionStorage` while a magic link is completed.
+- `preferenceDraft.js` retains non-personal schedule/station fields for one hour
+  in `localStorage` so a magic link opened in a new tab can restore the draft.
 
 The server boundary lives in `supabase/functions`, and database authorization
 lives in `supabase/migrations`. Never add service-role keys, email-provider

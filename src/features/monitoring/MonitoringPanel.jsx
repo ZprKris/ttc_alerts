@@ -221,7 +221,7 @@ export default function MonitoringPanel({
         setSubmission({
           kind: 'link-sent',
           message:
-            'Check your email for a secure verification link. Return in this browser to finish saving.',
+            'Check your email for a secure verification link. Open it in this browser to restore your selected stations and finish saving.',
         })
       } catch (error) {
         setSubmission({ kind: 'error', message: error.message })
@@ -286,6 +286,7 @@ export default function MonitoringPanel({
     }
 
     setSubmission({ kind: 'sending-link', message: '' })
+    savePendingPreferenceDraft(values, stationIds)
 
     try {
       await requestEmailLink(values.email, { shouldCreateUser: false })
@@ -297,7 +298,7 @@ export default function MonitoringPanel({
     setSubmission({
       kind: 'link-sent',
       message:
-        'If a subscription exists for that address, a secure management link is on its way.',
+        'If a subscription exists for that address, a secure sign-in link is on its way. Your selected stations will be restored when it opens in this browser.',
     })
   }
 

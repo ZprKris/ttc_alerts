@@ -38,6 +38,7 @@ function createProps(overrides = {}) {
 describe('secure monitoring preferences', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    window.localStorage.clear()
     window.sessionStorage.clear()
     loadPreferences.mockResolvedValue({
       subscriptionStatus: 'none',
@@ -98,8 +99,8 @@ describe('secure monitoring preferences', () => {
     expect(screen.getByRole('status')).toHaveTextContent(
       'Check your email for a secure verification link.',
     )
-    const draft = window.sessionStorage.getItem(
-      'ttc-alerts:pending-preference:v1',
+    const draft = window.localStorage.getItem(
+      'ttc-alerts:pending-preference:v2',
     )
     expect(draft).not.toContain('rider@example.com')
     expect(draft).not.toContain('consent')
@@ -168,6 +169,11 @@ describe('secure monitoring preferences', () => {
     expect(requestEmailLink).toHaveBeenCalledWith('unknown@example.com', {
       shouldCreateUser: false,
     })
+    expect(
+      JSON.parse(
+        window.localStorage.getItem('ttc-alerts:pending-preference:v2'),
+      ).stationIds,
+    ).toEqual(['northgate'])
   })
 
   it('guides an existing user directly to password-free sign in', async () => {

@@ -1,10 +1,14 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import userEvent from '@testing-library/user-event'
 import App from './App.jsx'
 import { MAP_INTERACTION_OPTIONS } from './features/map/mapConfig.js'
 
 describe('subway map', () => {
+  beforeEach(() => {
+    window.localStorage.clear()
+  })
+
   it('renders the sample network and monitoring panel', () => {
     render(<App />)
 
@@ -89,6 +93,30 @@ describe('subway map', () => {
     expect(central).toHaveAttribute('aria-pressed', 'false')
     expect(screen.getByLabelText('0 stations selected')).toHaveTextContent('0')
     expect(screen.getByRole('button', { name: /clear all/i })).toBeDisabled()
+  })
+
+  it('restores selected stations after a cross-tab email-link handoff', async () => {
+    window.localStorage.setItem(
+      'ttc-alerts:pending-preference:v2',
+      JSON.stringify({
+        startTime: '07:00',
+        endTime: '09:00',
+        timeZone: 'America/Toronto',
+        weekdays: ['monday'],
+        stationIds: ['finch-west', 'highway-407'],
+        expiresAt: Date.now() + 60_000,
+      }),
+    )
+
+    render(<App />)
+
+    expect(
+      await screen.findByRole('button', { name: /finch west station/i }),
+    ).toHaveAttribute('aria-pressed', 'true')
+    expect(
+      screen.getByRole('button', { name: /highway 407 station/i }),
+    ).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByLabelText('2 stations selected')).toHaveTextContent('2')
   })
 
   it('uses arrow keys to select and focus the next ordered stations', async () => {

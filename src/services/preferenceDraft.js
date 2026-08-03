@@ -1,15 +1,25 @@
-const draftStorageKey = 'ttc-alerts:pending-preference:v1'
+const draftStorageKey = 'ttc-alerts:pending-preference:v2'
+const legacyDraftStorageKey = 'ttc-alerts:pending-preference:v1'
+const draftLifetimeMs = 60 * 60 * 1000
 
-function getSessionStorage() {
+function getLocalStorage() {
   try {
-    return window.sessionStorage
+    return window.localStorage
   } catch {
     return null
   }
 }
 
+function removeDraft(storage) {
+  try {
+    storage?.removeItem(draftStorageKey)
+  } catch {
+    // Storage can be unavailable in privacy-restricted browser contexts.
+  }
+}
+
 export function savePendingPreferenceDraft(values, stationIds) {
-  const storage = getSessionStorage()
+  const storage = getLocalStorage()
 
   if (!storage) {
     return
@@ -21,13 +31,18 @@ export function savePendingPreferenceDraft(values, stationIds) {
     timeZone: values.timeZone,
     weekdays: values.weekdays,
     stationIds,
+    expiresAt: Date.now() + draftLifetimeMs,
   }
 
-  storage.setItem(draftStorageKey, JSON.stringify(draft))
+  try {
+    storage.setItem(draftStorageKey, JSON.stringify(draft))
+  } catch {
+    // Draft persistence is a convenience and must not block authentication.
+  }
 }
 
 export function readPendingPreferenceDraft() {
-  const storage = getSessionStorage()
+  const storage = getLocalStorage()
 
   if (!storage) {
     return null
@@ -39,18 +54,28 @@ export function readPendingPreferenceDraft() {
     if (
       !draft ||
       !Array.isArray(draft.weekdays) ||
-      !Array.isArray(draft.stationIds)
+      !Array.isArray(draft.stationIds) ||
+      !Number.isFinite(draft.expiresAt) ||
+      draft.expiresAt <= Date.now()
     ) {
+      removeDraft(storage)
       return null
     }
 
     return draft
   } catch {
-    storage.removeItem(draftStorageKey)
+    removeDraft(storage)
     return null
   }
 }
 
 export function clearPendingPreferenceDraft() {
-  getSessionStorage()?.removeItem(draftStorageKey)
+  removeDraft(getLocalStorage())
+
+  try {
+    window.sessionStorage.removeItem(legacyDraftStorageKey)
+    window.sessionStorage.removeItem(draftStorageKey)
+  } catch {
+    // Storage can be unavailable in privacy-restricted browser contexts.
+  }
 }
