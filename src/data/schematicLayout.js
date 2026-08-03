@@ -88,6 +88,7 @@ export function createSchematicStations(stations, lines) {
 
   return stations.map((station) => {
     const lineTwoIndex = lineTwo.orderedStationIds.indexOf(station.id)
+    const position = positions.get(station.id) ?? station.position
     let labelPlacement =
       lineTwoIndex >= 0
         ? getLineTwoPlacement(lineTwoIndex)
@@ -99,8 +100,8 @@ export function createSchematicStations(stations, lines) {
 
     return {
       ...station,
-      navigationPosition: station.navigationPosition ?? station.position,
-      position: positions.get(station.id) ?? station.position,
+      navigationPosition: position,
+      position,
       labelPlacement,
     }
   })

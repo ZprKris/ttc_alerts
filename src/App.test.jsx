@@ -117,6 +117,23 @@ describe('subway map', () => {
     expect(screen.getByLabelText('3 stations selected')).toHaveTextContent('3')
   })
 
+  it('continues downward past Highway 407 on the displayed branch', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const highway407 = await screen.findByRole('button', {
+      name: /highway 407 station/i,
+    })
+
+    await user.click(highway407)
+    await user.keyboard('{ArrowDown}')
+
+    const pioneerVillage = screen.getByRole('button', {
+      name: /pioneer village station/i,
+    })
+    expect(pioneerVillage).toHaveAttribute('aria-pressed', 'true')
+    expect(pioneerVillage).toHaveFocus()
+  })
+
   it('does not move beyond a terminal station', async () => {
     const user = userEvent.setup()
     render(<App />)

@@ -6,7 +6,7 @@ function getScreenDirection(source, target) {
   const horizontalDistance = targetPosition.x - sourcePosition.x
   const verticalDistance = targetPosition.y - sourcePosition.y
 
-  if (Math.abs(horizontalDistance) >= Math.abs(verticalDistance)) {
+  if (Math.abs(horizontalDistance) > Math.abs(verticalDistance)) {
     return horizontalDistance >= 0 ? 'right' : 'left'
   }
 
