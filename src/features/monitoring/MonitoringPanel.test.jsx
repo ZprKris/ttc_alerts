@@ -3,10 +3,10 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useSubscriptionSession } from '../auth/useSubscriptionSession.js'
 import {
+  deletePreference,
   loadPreferences,
   requestEmailLink,
   savePreferences,
-  unsubscribePreferences,
 } from '../../services/subscriptionApi.js'
 import MonitoringPanel from './MonitoringPanel.jsx'
 
@@ -15,10 +15,10 @@ vi.mock('../auth/useSubscriptionSession.js', () => ({
 }))
 
 vi.mock('../../services/subscriptionApi.js', () => ({
+  deletePreference: vi.fn(),
   loadPreferences: vi.fn(),
   requestEmailLink: vi.fn(),
   savePreferences: vi.fn(),
-  unsubscribePreferences: vi.fn(),
 }))
 
 const station = { id: 'northgate', name: 'Northgate' }
@@ -41,11 +41,11 @@ describe('secure monitoring preferences', () => {
     window.sessionStorage.clear()
     loadPreferences.mockResolvedValue({
       subscriptionStatus: 'none',
-      preference: null,
+      preferences: [],
     })
     requestEmailLink.mockResolvedValue(undefined)
     savePreferences.mockResolvedValue({ preferenceId: 'preference-id' })
-    unsubscribePreferences.mockResolvedValue({ unsubscribed: true })
+    deletePreference.mockResolvedValue({ deleted: true, remainingCount: 0 })
     useSubscriptionSession.mockReturnValue({
       status: 'ready',
       isConfigured: true,
@@ -136,8 +136,9 @@ describe('secure monitoring preferences', () => {
       }),
     )
     expect(screen.getByRole('status')).toHaveTextContent(
-      'verified monitoring preferences were saved securely',
+      'new verified alert was saved securely',
     )
+    await user.click(screen.getByRole('tab', { name: /set up/i }))
     expect(
       screen.getByRole('textbox', { name: /email address/i }),
     ).toHaveAttribute('readonly')
@@ -182,30 +183,34 @@ describe('secure monitoring preferences', () => {
     })
     loadPreferences.mockResolvedValue({
       subscriptionStatus: 'active',
-      preference: {
-        startTime: '07:30',
-        endTime: '10:00',
-        timeZone: 'America/Toronto',
-        isoWeekdays: [1, 3, 5],
-        stationIds: ['northgate'],
-      },
+      preferences: [
+        {
+          id: 'preference-1',
+          startTime: '07:30',
+          endTime: '10:00',
+          timeZone: 'America/Toronto',
+          isoWeekdays: [1, 3, 5],
+          stationIds: ['northgate'],
+        },
+      ],
     })
     rerender(<MonitoringPanel {...createProps()} />)
 
     const user = userEvent.setup()
     await user.click(await screen.findByRole('tab', { name: /my alerts/i }))
+    await user.click(screen.getByRole('button', { name: /^alert 1/i }))
 
     expect(
-      screen.getByRole('heading', { name: /station service alerts/i }),
+      screen.getByRole('heading', { name: /subscribed alerts/i }),
     ).toBeInTheDocument()
     expect(screen.getByText('7:30 AM–10:00 AM')).toBeInTheDocument()
     expect(screen.getByText('Mon, Wed, Fri')).toBeInTheDocument()
     expect(
-      screen.getByRole('list', { name: /subscribed stations/i }),
+      screen.getByRole('list', { name: /alert 1 stations/i }),
     ).toHaveTextContent('Northgate')
   })
 
-  it('requires confirmation before deleting saved preferences', async () => {
+  it('expands and deletes one numbered alert without removing the others', async () => {
     const user = userEvent.setup()
     const props = createProps()
     useSubscriptionSession.mockReturnValue({
@@ -216,30 +221,57 @@ describe('secure monitoring preferences', () => {
     })
     loadPreferences.mockResolvedValue({
       subscriptionStatus: 'active',
-      preference: {
-        startTime: '07:30',
-        endTime: '10:00',
-        timeZone: 'America/Toronto',
-        isoWeekdays: [1, 3, 5],
-        stationIds: ['northgate'],
-      },
+      preferences: [
+        {
+          id: 'preference-1',
+          startTime: '07:30',
+          endTime: '10:00',
+          timeZone: 'America/Toronto',
+          isoWeekdays: [1, 3, 5],
+          stationIds: ['northgate'],
+        },
+        {
+          id: 'preference-2',
+          startTime: '12:00',
+          endTime: '13:00',
+          timeZone: 'America/Toronto',
+          isoWeekdays: [2],
+          stationIds: ['northgate'],
+        },
+      ],
     })
     render(<MonitoringPanel {...props} />)
 
     await user.click(await screen.findByRole('tab', { name: /my alerts/i }))
-    await user.click(
-      screen.getByRole('button', { name: /remove monitoring subscription/i }),
+    expect(screen.getByRole('button', { name: /^alert 1/i })).toHaveAttribute(
+      'aria-expanded',
+      'false',
     )
-    expect(unsubscribePreferences).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: /^alert 1/i }))
+    expect(screen.getByText('7:30 AM–10:00 AM')).toBeInTheDocument()
+    await user.click(
+      screen.getByRole('button', {
+        name: /open delete confirmation for alert 1/i,
+      }),
+    )
+    expect(deletePreference).not.toHaveBeenCalled()
 
     await user.click(
-      screen.getByRole('button', { name: /^remove subscription$/i }),
+      screen.getByRole('button', { name: /^confirm delete alert 1$/i }),
     )
 
-    await waitFor(() => expect(unsubscribePreferences).toHaveBeenCalledOnce())
-    expect(props.onClearSelection).toHaveBeenCalledOnce()
+    await waitFor(() =>
+      expect(deletePreference).toHaveBeenCalledWith('preference-1'),
+    )
+    expect(
+      screen.queryByRole('button', { name: /^alert 2/i }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /^alert 1/i }),
+    ).toBeInTheDocument()
+    expect(props.onClearSelection).not.toHaveBeenCalled()
     expect(screen.getByRole('status')).toHaveTextContent(
-      'preferences were removed',
+      'selected alert subscription was removed',
     )
   })
 })

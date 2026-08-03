@@ -72,24 +72,89 @@
   gap: 14px;
 }
 
+.subscriptions-heading h3 {
+  margin: 0;
+  color: #172035;
+  font-size: 0.9rem;
+}
+
+.subscriptions-heading p {
+  margin: 5px 0 0;
+  color: #748196;
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+
+.subscription-list {
+  display: grid;
+  gap: 9px;
+}
+
 .subscription-card {
-  padding: 15px;
+  overflow: hidden;
   background: #fbfcfe;
   border: 1px solid #d9e0e9;
   border-radius: 12px;
 }
 
-.subscription-card-heading {
+.subscription-row {
   display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  justify-content: space-between;
+  gap: 7px;
+  align-items: stretch;
+  padding: 7px;
 }
 
-.subscription-card-heading h3 {
-  margin: 6px 0 0;
+.subscription-expand-button {
+  display: grid;
+  min-width: 0;
+  min-height: 48px;
+  flex: 1;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 9px;
+  align-items: center;
+  padding: 9px 10px;
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+}
+
+.subscription-expand-button:hover {
+  background: #f0f4f8;
+}
+
+.subscription-expand-button:focus-visible {
+  outline: 3px solid var(--accent-focus-ring);
+  outline-offset: 1px;
+}
+
+.alert-number {
   color: #172035;
-  font-size: 0.88rem;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.alert-row-summary {
+  color: #748196;
+  font-size: 0.65rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.subscription-expand-button svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: #657287;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+  transition: transform 160ms ease;
+}
+
+.subscription-expand-button[aria-expanded='true'] svg {
+  transform: rotate(180deg);
 }
 
 .subscription-status {
@@ -110,6 +175,7 @@
   width: 38px;
   height: 38px;
   flex: none;
+  align-self: center;
   padding: 8px;
   color: #a31e28;
   cursor: pointer;
@@ -145,6 +211,11 @@
   grid-template-columns: 1fr 1fr;
   gap: 8px;
   margin: 15px 0;
+}
+
+.subscription-card-details {
+  padding: 14px;
+  border-top: 1px solid #e1e6ed;
 }
 
 .subscription-details > div {
@@ -194,7 +265,7 @@
 }
 
 .subscription-card .unsubscribe-confirmation {
-  margin-top: 15px;
+  margin: 0 14px 14px;
 }
 
 .subscriptions-empty {

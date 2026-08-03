@@ -5,17 +5,15 @@ import {
   savePendingPreferenceDraft,
 } from '../../services/preferenceDraft.js'
 import {
+  deletePreference,
   loadPreferences,
   requestEmailLink,
   savePreferences,
-  unsubscribePreferences,
 } from '../../services/subscriptionApi.js'
 import {
-  DEFAULT_TIME_ZONE,
   WEEKDAYS,
   createInitialMonitoringValues,
   getScheduleKind,
-  isoWeekdaysToValues,
   validateEmailAddress,
   validateMonitoringValues,
   weekdayValuesToIso,
@@ -82,10 +80,10 @@ export default function MonitoringPanel({
   )
   const [errors, setErrors] = useState({})
   const [submission, setSubmission] = useState({ kind: 'idle', message: '' })
-  const [hasSubscription, setHasSubscription] = useState(false)
-  const [savedPreference, setSavedPreference] = useState(null)
+  const [savedPreferences, setSavedPreferences] = useState([])
   const [activeTab, setActiveTab] = useState('setup')
-  const [confirmingUnsubscribe, setConfirmingUnsubscribe] = useState(false)
+  const [expandedPreferenceId, setExpandedPreferenceId] = useState(null)
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState(null)
   const loadedUserId = useRef(null)
   const {
     status: authStatus,
@@ -115,7 +113,7 @@ export default function MonitoringPanel({
   )
 
   useEffect(() => {
-    if (!user?.id || initialDraft || loadedUserId.current === user.id) {
+    if (!user?.id || loadedUserId.current === user.id) {
       return undefined
     }
 
@@ -129,20 +127,7 @@ export default function MonitoringPanel({
           return
         }
 
-        setHasSubscription(result.subscriptionStatus === 'active')
-        setSavedPreference(result.preference)
-
-        if (result.preference) {
-          setValues((currentValues) => ({
-            ...currentValues,
-            startTime: result.preference.startTime,
-            endTime: result.preference.endTime,
-            timeZone: DEFAULT_TIME_ZONE,
-            weekdays: isoWeekdaysToValues(result.preference.isoWeekdays),
-            consent: result.subscriptionStatus === 'active',
-          }))
-          onReplaceSelection(result.preference.stationIds)
-        }
+        setSavedPreferences(result.preferences ?? [])
 
         setSubmission({ kind: 'idle', message: '' })
       })
@@ -155,7 +140,7 @@ export default function MonitoringPanel({
     return () => {
       isActive = false
     }
-  }, [initialDraft, onReplaceSelection, user?.id])
+  }, [user?.id])
 
   const updateValue = (fieldName, value) => {
     setValues((currentValues) => ({
@@ -246,7 +231,7 @@ export default function MonitoringPanel({
     setSubmission({ kind: 'saving', message: '' })
 
     try {
-      await savePreferences({
+      const result = await savePreferences({
         startTime: values.startTime,
         endTime: values.endTime,
         timeZone: values.timeZone,
@@ -255,17 +240,23 @@ export default function MonitoringPanel({
         consent: values.consent,
       })
       clearPendingPreferenceDraft()
-      setHasSubscription(true)
-      setSavedPreference({
+      const savedPreference = {
+        id: result.preferenceId,
         startTime: values.startTime,
         endTime: values.endTime,
         timeZone: values.timeZone,
         isoWeekdays: weekdayValuesToIso(values.weekdays),
         stationIds,
-      })
+      }
+      setSavedPreferences((currentPreferences) => [
+        ...currentPreferences,
+        savedPreference,
+      ])
+      setExpandedPreferenceId(result.preferenceId)
+      setActiveTab('alerts')
       setSubmission({
         kind: 'saved',
-        message: 'Your verified monitoring preferences were saved securely.',
+        message: 'Your new verified alert was saved securely.',
       })
     } catch (error) {
       setSubmission({ kind: 'error', message: error.message })
@@ -315,8 +306,7 @@ export default function MonitoringPanel({
       loadedUserId.current = null
       onReplaceSelection([])
       setValues(createInitialMonitoringValues())
-      setHasSubscription(false)
-      setSavedPreference(null)
+      setSavedPreferences([])
       setActiveTab('setup')
       setSubmission({ kind: 'idle', message: '' })
     } catch (error) {
@@ -324,21 +314,23 @@ export default function MonitoringPanel({
     }
   }
 
-  const handleUnsubscribe = async () => {
-    setSubmission({ kind: 'unsubscribing', message: '' })
+  const handleDeletePreference = async (preferenceId) => {
+    setSubmission({ kind: 'deleting', message: '' })
 
     try {
-      await unsubscribePreferences()
-      clearPendingPreferenceDraft()
-      onClearSelection()
-      setValues(createInitialMonitoringValues())
-      setHasSubscription(false)
-      setSavedPreference(null)
-      setConfirmingUnsubscribe(false)
+      await deletePreference(preferenceId)
+      setSavedPreferences((currentPreferences) =>
+        currentPreferences.filter(
+          (preference) => preference.id !== preferenceId,
+        ),
+      )
+      setConfirmingDeleteId(null)
+      setExpandedPreferenceId((currentId) =>
+        currentId === preferenceId ? null : currentId,
+      )
       setSubmission({
-        kind: 'unsubscribed',
-        message:
-          'Monitoring was unsubscribed and its preferences were removed.',
+        kind: 'deleted',
+        message: 'The selected alert subscription was removed.',
       })
     } catch (error) {
       setSubmission({ kind: 'error', message: error.message })
@@ -349,17 +341,9 @@ export default function MonitoringPanel({
     'loading',
     'sending-link',
     'saving',
-    'unsubscribing',
+    'deleting',
   ].includes(submission.kind)
   const showSetup = !user || activeTab === 'setup'
-  const savedStations = (savedPreference?.stationIds ?? []).map(
-    (stationId) =>
-      allStations.find((station) => station.id === stationId) ?? {
-        id: stationId,
-        name: stationId,
-      },
-  )
-  const savedWeekdays = weekdayLabels(savedPreference?.isoWeekdays)
 
   return (
     <aside className="monitoring-card" aria-label="Monitoring setup">
@@ -468,8 +452,12 @@ export default function MonitoringPanel({
             onClick={() => setActiveTab('alerts')}
           >
             My alerts
-            {hasSubscription ? (
-              <span aria-label="1 active subscription">1</span>
+            {savedPreferences.length > 0 ? (
+              <span
+                aria-label={`${savedPreferences.length} active subscriptions`}
+              >
+                {savedPreferences.length}
+              </span>
             ) : null}
           </button>
         </div>
@@ -482,75 +470,124 @@ export default function MonitoringPanel({
           role="tabpanel"
           aria-labelledby="monitoring-alerts-tab"
         >
-          {hasSubscription && savedPreference ? (
-            <article className="subscription-card">
-              <div className="subscription-card-heading">
-                <div>
-                  <span className="subscription-status">Active</span>
-                  <h3>Station service alerts</h3>
-                </div>
-                <button
-                  className="trash-subscription-button"
-                  type="button"
-                  title="Remove subscription"
-                  aria-label="Remove monitoring subscription"
-                  onClick={() => setConfirmingUnsubscribe(true)}
-                >
-                  <TrashIcon />
-                </button>
-              </div>
+          <header className="subscriptions-heading">
+            <h3>Subscribed alerts</h3>
+            <p>Expand an alert to review its stations and schedule.</p>
+          </header>
 
-              <dl className="subscription-details">
-                <div>
-                  <dt>Hours</dt>
-                  <dd>
-                    {timeLabel(savedPreference.startTime)}–
-                    {timeLabel(savedPreference.endTime)}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Days</dt>
-                  <dd>{savedWeekdays.join(', ')}</dd>
-                </div>
-              </dl>
+          {savedPreferences.length > 0 ? (
+            <div className="subscription-list">
+              {savedPreferences.map((preference, index) => {
+                const alertNumber = index + 1
+                const isExpanded = expandedPreferenceId === preference.id
+                const savedStations = (preference.stationIds ?? []).map(
+                  (stationId) =>
+                    allStations.find((station) => station.id === stationId) ?? {
+                      id: stationId,
+                      name: stationId,
+                    },
+                )
+                const savedWeekdays = weekdayLabels(preference.isoWeekdays)
 
-              <div className="subscription-stations">
-                <p>Stations ({savedStations.length})</p>
-                <ul aria-label="Subscribed stations">
-                  {savedStations.map((station) => (
-                    <li key={station.id}>{station.name}</li>
-                  ))}
-                </ul>
-              </div>
+                return (
+                  <article className="subscription-card" key={preference.id}>
+                    <div className="subscription-row">
+                      <button
+                        className="subscription-expand-button"
+                        type="button"
+                        aria-expanded={isExpanded}
+                        aria-controls={`alert-details-${preference.id}`}
+                        onClick={() =>
+                          setExpandedPreferenceId(
+                            isExpanded ? null : preference.id,
+                          )
+                        }
+                      >
+                        <span className="alert-number">
+                          Alert {alertNumber}
+                        </span>
+                        <span className="alert-row-summary">
+                          {savedStations.length} station
+                          {savedStations.length === 1 ? '' : 's'}
+                        </span>
+                        <svg viewBox="0 0 20 20" aria-hidden="true">
+                          <path d="m6 8 4 4 4-4" />
+                        </svg>
+                      </button>
+                      <button
+                        className="trash-subscription-button"
+                        type="button"
+                        title={`Delete Alert ${alertNumber}`}
+                        aria-label={`Open delete confirmation for Alert ${alertNumber}`}
+                        onClick={() => setConfirmingDeleteId(preference.id)}
+                      >
+                        <TrashIcon />
+                      </button>
+                    </div>
 
-              {confirmingUnsubscribe ? (
-                <div className="unsubscribe-confirmation">
-                  <strong>Remove this monitoring subscription?</strong>
-                  <p>
-                    Its saved schedule and all station selections will be
-                    deleted.
-                  </p>
-                  <div>
-                    <button
-                      type="button"
-                      onClick={() => setConfirmingUnsubscribe(false)}
-                    >
-                      Keep monitoring
-                    </button>
-                    <button
-                      className="danger-button"
-                      type="button"
-                      disabled={submission.kind === 'unsubscribing'}
-                      onClick={handleUnsubscribe}
-                    >
-                      {submission.kind === 'unsubscribing'
-                        ? 'Removing…'
-                        : 'Remove subscription'}
-                    </button>
-                  </div>
-                </div>
-              ) : null}
-            </article>
+                    {isExpanded ? (
+                      <div
+                        id={`alert-details-${preference.id}`}
+                        className="subscription-card-details"
+                      >
+                        <span className="subscription-status">Active</span>
+                        <dl className="subscription-details">
+                          <div>
+                            <dt>Hours</dt>
+                            <dd>
+                              {timeLabel(preference.startTime)}–
+                              {timeLabel(preference.endTime)}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>Days</dt>
+                            <dd>{savedWeekdays.join(', ')}</dd>
+                          </div>
+                        </dl>
+
+                        <div className="subscription-stations">
+                          <p>Stations ({savedStations.length})</p>
+                          <ul aria-label={`Alert ${alertNumber} stations`}>
+                            {savedStations.map((station) => (
+                              <li key={station.id}>{station.name}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {confirmingDeleteId === preference.id ? (
+                      <div className="unsubscribe-confirmation">
+                        <strong>Delete Alert {alertNumber}?</strong>
+                        <p>
+                          Its schedule and station selections will be removed.
+                        </p>
+                        <div>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmingDeleteId(null)}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            className="danger-button"
+                            type="button"
+                            disabled={submission.kind === 'deleting'}
+                            onClick={() =>
+                              handleDeletePreference(preference.id)
+                            }
+                          >
+                            {submission.kind === 'deleting'
+                              ? 'Deleting…'
+                              : `Confirm delete Alert ${alertNumber}`}
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
+                  </article>
+                )
+              })}
+            </div>
           ) : (
             <div className="subscriptions-empty">
               <span className="empty-ring" aria-hidden="true" />

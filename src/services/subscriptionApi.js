@@ -48,8 +48,8 @@ export function savePreferences(preferences) {
   return invokePreferences('PUT', preferences)
 }
 
-export function unsubscribePreferences() {
-  return invokePreferences('DELETE')
+export function deletePreference(preferenceId) {
+  return invokePreferences('DELETE', { preferenceId })
 }
 
 export async function signOutSubscriptionSession() {

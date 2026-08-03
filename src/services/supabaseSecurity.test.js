@@ -29,6 +29,13 @@ const notificationsSender = readFileSync(
   join(process.cwd(), 'supabase/functions/notifications-send/index.js'),
   'utf8',
 )
+const multipleAlertsMigration = readFileSync(
+  join(
+    process.cwd(),
+    'supabase/migrations/202608030004_multiple_monitoring_alerts.sql',
+  ),
+  'utf8',
+)
 
 describe('Supabase security boundaries', () => {
   it('forces RLS and denies direct authenticated mutations', () => {
@@ -54,6 +61,25 @@ describe('Supabase security boundaries', () => {
     )
     expect(preferencesFunction).toContain('auth.getUser(accessToken)')
     expect(preferencesFunction).not.toMatch(/service.?role/i)
+  })
+
+  it('supports multiple owned alert subscriptions with scoped deletion', () => {
+    expect(multipleAlertsMigration).toContain(
+      'drop constraint monitoring_preferences_user_id_key',
+    )
+    expect(multipleAlertsMigration).toContain(
+      'where id = p_preference_id\n    and user_id = v_user_id',
+    )
+    expect(multipleAlertsMigration).toContain(
+      'grant execute on function public.delete_my_monitoring_preference(uuid)',
+    )
+    expect(multipleAlertsMigration).toContain(
+      'No more than 20 monitoring alerts may be active.',
+    )
+    expect(preferencesFunction).toContain(".order('created_at'")
+    expect(preferencesFunction).toContain("'delete_my_monitoring_preference'")
+    expect(alertsPoller).toContain('.flatMap((row) =>')
+    expect(alertsPoller).toContain('stationMatchesByUser')
   })
 
   it('keeps alert ingestion server-only and deduplicates revisions', () => {

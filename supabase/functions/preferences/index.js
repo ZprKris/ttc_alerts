@@ -9,6 +9,8 @@ const allowedOrigins = new Set(
     .filter(Boolean),
 )
 const timePattern = /^(?:[01]\d|2[0-3]):[0-5]\d$/
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 function getCorsHeaders(origin) {
   return {
@@ -113,9 +115,9 @@ async function loadPreferences(userClient) {
     userClient
       .from('monitoring_preferences')
       .select(
-        'id, start_time, end_time, time_zone, crosses_midnight, updated_at, monitoring_weekdays(iso_weekday), monitoring_stations(station_id)',
+        'id, start_time, end_time, time_zone, crosses_midnight, created_at, updated_at, monitoring_weekdays(iso_weekday), monitoring_stations(station_id)',
       )
-      .maybeSingle(),
+      .order('created_at', { ascending: true }),
   ])
 
   if (subscriberResult.error || preferenceResult.error) {
@@ -126,27 +128,26 @@ async function loadPreferences(userClient) {
     throw new Error('Preference read failed')
   }
 
-  const preference = preferenceResult.data
+  const preferences = (preferenceResult.data ?? []).map((preference) => ({
+    id: preference.id,
+    startTime: preference.start_time.slice(0, 5),
+    endTime: preference.end_time.slice(0, 5),
+    timeZone: preference.time_zone,
+    crossesMidnight: preference.crosses_midnight,
+    createdAt: preference.created_at,
+    updatedAt: preference.updated_at,
+    isoWeekdays: preference.monitoring_weekdays
+      .map((weekday) => weekday.iso_weekday)
+      .sort((first, second) => first - second),
+    stationIds: preference.monitoring_stations.map(
+      (station) => station.station_id,
+    ),
+  }))
 
   return {
     subscriptionStatus: subscriberResult.data?.status ?? 'none',
     consentedAt: subscriberResult.data?.consented_at ?? null,
-    preference: preference
-      ? {
-          id: preference.id,
-          startTime: preference.start_time.slice(0, 5),
-          endTime: preference.end_time.slice(0, 5),
-          timeZone: preference.time_zone,
-          crossesMidnight: preference.crosses_midnight,
-          updatedAt: preference.updated_at,
-          isoWeekdays: preference.monitoring_weekdays
-            .map((weekday) => weekday.iso_weekday)
-            .sort((first, second) => first - second),
-          stationIds: preference.monitoring_stations.map(
-            (station) => station.station_id,
-          ),
-        }
-      : null,
+    preferences,
   }
 }
 
@@ -256,10 +257,32 @@ globalThis.Deno.serve(async (request) => {
     }
 
     if (request.method === 'DELETE') {
-      const { data, error } = await userClient.rpc('unsubscribe_my_monitoring')
+      let payload
+      try {
+        payload = await request.json()
+      } catch {
+        return jsonResponse(
+          { error: 'Request body must be valid JSON.' },
+          400,
+          origin,
+        )
+      }
+
+      if (!uuidPattern.test(payload?.preferenceId ?? '')) {
+        return jsonResponse(
+          { error: 'A valid alert subscription is required.' },
+          400,
+          origin,
+        )
+      }
+
+      const { data, error } = await userClient.rpc(
+        'delete_my_monitoring_preference',
+        { p_preference_id: payload.preferenceId },
+      )
 
       if (error) {
-        console.error('Unsubscribe failed', error)
+        console.error('Alert subscription delete failed', error)
         return jsonResponse(
           { error: 'The subscription could not be removed.' },
           400,
@@ -267,15 +290,36 @@ globalThis.Deno.serve(async (request) => {
         )
       }
 
-      const { error: emailEventError } = await userClient.rpc(
-        'queue_my_subscription_email',
-        { p_event_type: 'unsubscribe_confirmation' },
-      )
-      if (emailEventError) {
-        console.error('Unsubscribe confirmation queue failed', emailEventError)
+      if (!data?.deleted) {
+        return jsonResponse(
+          { error: 'The subscription was not found.' },
+          404,
+          origin,
+        )
       }
 
-      return jsonResponse({ unsubscribed: data === true }, 200, origin)
+      if (data.remainingCount === 0) {
+        const { error: emailEventError } = await userClient.rpc(
+          'queue_my_subscription_email',
+          { p_event_type: 'unsubscribe_confirmation' },
+        )
+        if (emailEventError) {
+          console.error(
+            'Unsubscribe confirmation queue failed',
+            emailEventError,
+          )
+        }
+      }
+
+      return jsonResponse(
+        {
+          deleted: true,
+          preferenceId: payload.preferenceId,
+          remainingCount: data.remainingCount,
+        },
+        200,
+        origin,
+      )
     }
 
     return jsonResponse({ error: 'Method is not allowed.' }, 405, origin)

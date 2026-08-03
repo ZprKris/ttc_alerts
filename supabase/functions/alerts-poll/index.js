@@ -135,14 +135,12 @@ function normalizeAlertEntity(entity, catalog, now) {
 function activePreferenceRows(rows) {
   return rows
     .filter((row) => row.status === 'active')
-    .map((row) => {
-      const preference = Array.isArray(row.monitoring_preferences)
-        ? row.monitoring_preferences[0]
-        : row.monitoring_preferences
-      if (!preference) {
-        return null
-      }
-      return {
+    .flatMap((row) => {
+      const preferences = Array.isArray(row.monitoring_preferences)
+        ? row.monitoring_preferences
+        : [row.monitoring_preferences].filter(Boolean)
+
+      return preferences.map((preference) => ({
         userId: row.user_id,
         startTime: preference.start_time,
         endTime: preference.end_time,
@@ -153,9 +151,8 @@ function activePreferenceRows(rows) {
         stationIds: (preference.monitoring_stations ?? []).map(
           (station) => station.station_id,
         ),
-      }
+      }))
     })
-    .filter(Boolean)
 }
 
 async function loadActivePreferences(admin) {
@@ -172,7 +169,7 @@ async function loadActivePreferences(admin) {
 }
 
 async function insertCandidates(admin, alert, preferences, now) {
-  const rows = []
+  const stationMatchesByUser = new Map()
   const affected = new Set(alert.affectedStationIds)
 
   for (const preference of preferences) {
@@ -185,15 +182,20 @@ async function insertCandidates(admin, alert, preferences, now) {
     if (matchedStationIds.length === 0) {
       continue
     }
-    rows.push({
-      user_id: preference.userId,
-      alert_id: alert.alertId,
-      content_hash: alert.contentHash,
-      matched_station_ids: matchedStationIds,
-      matched_at: now.toISOString(),
-      status: 'pending',
-    })
+
+    const userMatches = stationMatchesByUser.get(preference.userId) ?? new Set()
+    matchedStationIds.forEach((stationId) => userMatches.add(stationId))
+    stationMatchesByUser.set(preference.userId, userMatches)
   }
+
+  const rows = [...stationMatchesByUser].map(([userId, matchedStationIds]) => ({
+    user_id: userId,
+    alert_id: alert.alertId,
+    content_hash: alert.contentHash,
+    matched_station_ids: [...matchedStationIds],
+    matched_at: now.toISOString(),
+    status: 'pending',
+  }))
 
   if (rows.length === 0) {
     return 0

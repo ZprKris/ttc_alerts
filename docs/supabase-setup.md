@@ -14,14 +14,15 @@ The migration in `supabase/migrations` creates:
   reference.
 - `subscribers`: one status and consent record per verified Auth user. It does
   not duplicate the user's email from Supabase Auth.
-- `monitoring_preferences`: one time range and IANA time zone per subscriber.
+- `monitoring_preferences`: up to 20 independent alert schedules and IANA time
+  zones per subscriber.
 - `monitoring_weekdays`: the selected ISO weekdays (Monday is 1).
 - `monitoring_stations`: the selected station identifiers.
 
 An end time earlier than its start is stored as an overnight window. Equal
-times are rejected. Unsubscribing deletes the preference and its weekday and
-station rows, while retaining the minimal Auth identity and an unsubscribed
-status/consent history.
+times are rejected. Each alert can be deleted independently; deleting the last
+one marks the subscriber unsubscribed while retaining the minimal Auth identity
+and status/consent history.
 
 ## Security model
 
@@ -115,8 +116,10 @@ protobuf, expands known endpoint ranges using `transit_lines` and
 `transit_line_stations`, and writes normalized records to `alert_events`.
 Matching subscribers produce `pending` rows in
 `alert_notification_candidates`; Phase 8 will claim those rows for email
-delivery. A unique `(user_id, alert_id, content_hash)` constraint prevents the
-same alert revision from producing duplicate candidates.
+delivery. Multiple active schedules are evaluated independently and their
+matching stations are combined per user. A unique
+`(user_id, alert_id, content_hash)` constraint prevents the same alert revision
+from producing duplicate emails.
 
 Configure these Edge Function secrets in the hosted project's secret manager:
 
