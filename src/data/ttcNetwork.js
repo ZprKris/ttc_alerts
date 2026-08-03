@@ -24,7 +24,7 @@ export const lines = [
       "st-clair",
       "summerhill",
       "rosedale",
-      "bloor",
+      "yonge",
       "wellesley",
       "college",
       "tmu",
@@ -274,27 +274,12 @@ export const stations = [
     ],
     "officialStopId": "13803",
     "officialStopIds": [
-      "13803"
+      "13803",
+      "13864"
     ],
     "position": {
       "x": 575,
       "y": 440
-    },
-    "labelPlacement": "right"
-  },
-  {
-    "id": "bloor",
-    "name": "Bloor",
-    "lineIds": [
-      "line-1"
-    ],
-    "officialStopId": "13864",
-    "officialStopIds": [
-      "13864"
-    ],
-    "position": {
-      "x": 584,
-      "y": 459
     },
     "labelPlacement": "right"
   },
@@ -514,7 +499,7 @@ export const stations = [
       "x": 518,
       "y": 464
     },
-    "labelPlacement": "top-right",
+    "labelPlacement": "top",
     "interchange": {
       "lineIds": [
         "line-1",
@@ -984,12 +969,13 @@ export const stations = [
       "x": 568,
       "y": 459
     },
-    "labelPlacement": "right"
+    "labelPlacement": "top"
   },
   {
     "id": "yonge",
-    "name": "Yonge",
+    "name": "Bloor-Yonge",
     "lineIds": [
+      "line-1",
       "line-2"
     ],
     "officialStopId": "13756",
@@ -1000,7 +986,13 @@ export const stations = [
       "x": 582,
       "y": 456
     },
-    "labelPlacement": "right"
+    "labelPlacement": "right",
+    "interchange": {
+      "lineIds": [
+        "line-1",
+        "line-2"
+      ]
+    }
   },
   {
     "id": "sherbourne",
@@ -1256,11 +1248,11 @@ export const stations = [
       "x": 654,
       "y": 129
     },
-    "labelPlacement": "right"
+    "labelPlacement": "top"
   },
   {
     "id": "don-mills-station",
-    "name": "Don Mills Station -",
+    "name": "Don Mills",
     "lineIds": [
       "line-4"
     ],
@@ -1335,12 +1327,12 @@ export const connections = [
     "id": "line-1-9",
     "lineId": "line-1",
     "source": "rosedale",
-    "target": "bloor"
+    "target": "yonge"
   },
   {
     "id": "line-1-10",
     "lineId": "line-1",
-    "source": "bloor",
+    "source": "yonge",
     "target": "wellesley"
   },
   {
@@ -1705,4 +1697,9 @@ export const connections = [
   }
 ]
 
-export const sampleNetwork = Object.freeze({ metadata: networkMetadata, lines, stations, connections })
+export const sampleNetwork = Object.freeze({
+  metadata: networkMetadata,
+  lines,
+  stations,
+  connections,
+})

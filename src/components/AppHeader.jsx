@@ -9,12 +9,10 @@ export default function AppHeader() {
         </span>
         <span>
           <span className="brand-name">TTC Station Watch</span>
-          <span className="brand-tagline">
-            Alerts for the stops that matter
-          </span>
+          <span className="brand-tagline">No more shuttle-bus surprises</span>
         </span>
       </a>
-      <span className="phase-badge">Verified preferences</span>
+      {/* <span className="phase-badge">Verified preferences</span> */}
     </header>
   )
 }

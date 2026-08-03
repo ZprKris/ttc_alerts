@@ -17,11 +17,11 @@ export default function MapWorkspace({
       <div className="map-toolbar">
         <div>
           <p className="eyebrow">Subway network</p>
-          <h1 id="map-heading">Choose the stations you care about</h1>
+          <h1 id="map-heading">Pick your stations to receive alerts</h1>
         </div>
-        <span className="map-status">
-          <span aria-hidden="true" /> Official TTC network
-        </span>
+        {/* <span className="map-status">
+          <span aria-hidden="true" />TTC network
+        </span> */}
       </div>
 
       <SubwayMap

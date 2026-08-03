@@ -51,17 +51,34 @@ export function createFlowElements(network) {
       throw new Error(`Invalid network connection: ${connection.id}`)
     }
 
+    const isIntoUnion =
+      connection.source === 'king' && connection.target === 'union'
+    const isOutOfUnion =
+      connection.source === 'union' && connection.target === 'st-andrew'
+    const handles = isIntoUnion
+      ? { sourceHandle: 'source-bottom', targetHandle: 'target-right' }
+      : isOutOfUnion
+        ? { sourceHandle: 'source-left', targetHandle: 'target-bottom' }
+        : getConnectionHandles(sourceStation, targetStation)
+
     return {
       id: connection.id,
       source: connection.source,
       target: connection.target,
-      ...getConnectionHandles(sourceStation, targetStation),
-      type: 'straight',
+      ...handles,
+      type: 'transit',
       style: {
         stroke: line.color,
         strokeWidth: 14,
       },
-      data: { lineId: line.id },
+      data: {
+        lineId: line.id,
+        curvePart: isIntoUnion
+          ? 'into-union'
+          : isOutOfUnion
+            ? 'out-of-union'
+            : null,
+      },
       selectable: false,
       focusable: false,
       reconnectable: false,

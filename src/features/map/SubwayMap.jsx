@@ -6,11 +6,16 @@ import { getDirectionOptions } from '../selection/directionalNavigation.js'
 import DirectionalControls from './DirectionalControls.jsx'
 import MapControls from './MapControls.jsx'
 import StationNode from './StationNode.jsx'
+import TransitEdge from './TransitEdge.jsx'
 import { createFlowElements } from './createFlowElements.js'
 import { MAP_INTERACTION_OPTIONS } from './mapConfig.js'
 import './subwayMap.css'
 
 const nodeTypes = { station: StationNode }
+const edgeTypes = { transit: TransitEdge }
+// Keep these auxiliary components available in the codebase, but omit them
+// from the current map UI.
+const SHOW_DIRECTIONAL_CONTROLS = false
 const { nodes: baseNodes, edges } = createFlowElements(sampleNetwork)
 
 export default function SubwayMap({
@@ -73,11 +78,12 @@ export default function SubwayMap({
       <ReactFlow
         nodes={nodes}
         edges={edges}
+        edgeTypes={edgeTypes}
         nodeTypes={nodeTypes}
         nodeOrigin={[0.5, 0.5]}
         fitView
-        fitViewOptions={{ padding: 0.18, minZoom: 0.65, maxZoom: 1.35 }}
-        minZoom={0.55}
+        fitViewOptions={{ padding: 0.08, minZoom: 0.32, maxZoom: 1.1 }}
+        minZoom={0.32}
         maxZoom={1.8}
         preventScrolling
         proOptions={{ hideAttribution: true }}
@@ -86,14 +92,16 @@ export default function SubwayMap({
         <MapControls />
       </ReactFlow>
 
-      <DirectionalControls
-        activeStation={activeStation}
-        directionOptions={directionOptions}
-        pendingDirection={pendingDirection}
-        onNavigate={onNavigate}
-        onChoose={onChooseDirection}
-        onCancel={onCancelDirection}
-      />
+      {SHOW_DIRECTIONAL_CONTROLS ? (
+        <DirectionalControls
+          activeStation={activeStation}
+          directionOptions={directionOptions}
+          pendingDirection={pendingDirection}
+          onNavigate={onNavigate}
+          onChoose={onChooseDirection}
+          onCancel={onCancelDirection}
+        />
+      ) : null}
 
       <div className="map-legend" aria-label="Sample subway lines">
         {sampleNetwork.lines.map((line) => (
@@ -109,7 +117,7 @@ export default function SubwayMap({
       </div>
 
       <p className="map-instructions">
-        Select a station, then use arrow keys or the direction pad to continue.
+        Select the stations you want to monitor directly on the map.
       </p>
       <p className="visually-hidden" aria-live="polite" aria-atomic="true">
         {announcement}

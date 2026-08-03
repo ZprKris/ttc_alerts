@@ -230,10 +230,10 @@
 }
 
 .weekday-grid input:checked + span {
-  color: #fff;
-  background: #25334a;
-  border-color: #25334a;
-  box-shadow: inset 0 -3px 0 #d71920;
+  color: #fffdfd;
+  background: #2cb8c8;
+  border-color: #2cb8c8;
+  box-shadow: inset 0 -3px 0 #2cb8c8;
 }
 
 .weekday-grid input:focus-visible + span {
@@ -270,10 +270,11 @@
 .monitoring-form .primary-button {
   margin-top: 0;
   cursor: pointer;
+  background: #28b3c3;
 }
 
 .monitoring-form .primary-button:hover {
-  background: #b9131a;
+  background: #36bac8;
 }
 
 .management-link-button {

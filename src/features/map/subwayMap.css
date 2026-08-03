@@ -1,7 +1,7 @@
 .subway-map {
   position: relative;
   width: 100%;
-  min-height: 520px;
+  min-height: 720px;
   flex: 1;
   overflow: hidden;
   background-color: #f7f9fc;
@@ -32,7 +32,7 @@
   position: relative;
   width: 28px;
   height: 28px;
-  --label-offset: 25px;
+  --label-offset: 27px;
 }
 
 .station-button {
@@ -72,7 +72,7 @@
 .station-node.is-interchange {
   width: 38px;
   height: 38px;
-  --label-offset: 25px;
+  --label-offset: 31px;
 }
 
 .station-node.is-interchange .station-disc {
@@ -152,14 +152,14 @@
   position: absolute;
   z-index: 2;
   width: max-content;
-  max-width: 130px;
-  padding: 4px 6px;
+  max-width: 190px;
+  padding: 4px 7px;
   color: #182234;
-  font-size: 13px;
-  font-weight: 750;
-  line-height: 1.15;
+  font-size: 15px;
+  font-weight: 720;
+  line-height: 1.2;
   white-space: nowrap;
-  background: rgb(255 255 255 / 86%);
+  background: rgb(255 255 255 / 91%);
   border-radius: 5px;
   filter: drop-shadow(0 1px 0 #fff);
 }
@@ -170,10 +170,49 @@
   transform: translateY(-50%);
 }
 
+.station-label--left,
+.station-label--left-wide {
+  top: 50%;
+  right: calc(50% + var(--label-offset));
+  transform: translateY(-50%);
+}
+
+.station-label--left-wide {
+  max-width: 250px;
+  white-space: normal;
+  text-align: right;
+}
+
 .station-label--top {
-  bottom: calc(50% + var(--label-offset));
-  left: 50%;
+  bottom: calc(25% + var(--label-offset) + 5px);
+  left: calc(50%);
   transform: translateX(-50%);
+}
+
+.station-label--top-wide {
+  bottom: calc(25% + var(--label-offset));
+  left: 65px;
+  transform: translateX(-50%);
+}
+
+.station-label--bottom {
+  top: calc(25% + var(--label-offset) + 5px);
+  left: calc(50% + 18px);
+  transform: translateX(-50%);
+}
+
+.station-label--bottom-wide {
+  top: 35px;
+  left: -40px;
+  transform: translateX(-50%);
+}
+
+.station-label--top-diagonal,
+.station-label--bottom-diagonal {
+  left: 30px;
+  bottom: 25px;
+  transform: rotate(-35deg);
+  transform-origin: left top;
 }
 
 .station-label--top-right {
@@ -498,7 +537,7 @@
 
 @media (max-width: 540px) {
   .subway-map {
-    min-height: 430px;
+    min-height: 620px;
   }
 
   .map-controls {

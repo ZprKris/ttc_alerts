@@ -10,7 +10,7 @@ describe('subway map', () => {
 
     expect(
       screen.getByRole('heading', {
-        name: /choose the stations you care about/i,
+        name: /pick your stations to receive alerts/i,
       }),
     ).toBeInTheDocument()
     expect(
@@ -52,10 +52,8 @@ describe('subway map', () => {
     expect(northgate).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByLabelText('1 station selected')).toHaveTextContent('1')
     expect(
-      screen.getByRole('button', {
-        name: /select north york centre down via line 1/i,
-      }),
-    ).toBeEnabled()
+      screen.queryByLabelText(/direction controls/i),
+    ).not.toBeInTheDocument()
     expect(
       screen.getByRole('list', { name: /selected stations/i }),
     ).toHaveTextContent('Finch')
@@ -135,7 +133,7 @@ describe('subway map', () => {
     expect(screen.getByLabelText('1 station selected')).toHaveTextContent('1')
   })
 
-  it('requires an explicit line-aware choice at an interchange', async () => {
+  it('keeps the auxiliary route chooser out of the map interface', async () => {
     const user = userEvent.setup()
     render(<App />)
     const market = await screen.findByRole('button', {
@@ -145,20 +143,11 @@ describe('subway map', () => {
     await user.click(market)
     await user.keyboard('{ArrowLeft}')
 
-    expect(
-      screen.getByRole('dialog', { name: /choose a left branch/i }),
-    ).toBeInTheDocument()
-    expect(screen.getByLabelText('1 station selected')).toHaveTextContent('1')
-
-    await user.click(screen.getByRole('button', { name: /spadina.*line 1/i }))
-
-    const hillcrest = screen.getByRole('button', {
-      name: /spadina station/i,
-    })
-    expect(hillcrest).toHaveAttribute('aria-pressed', 'true')
-    expect(hillcrest).toHaveFocus()
-    expect(screen.getByLabelText('2 stations selected')).toHaveTextContent('2')
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('1 station selected')).toHaveTextContent('1')
+    expect(
+      screen.queryByLabelText(/direction controls/i),
+    ).not.toBeInTheDocument()
   })
 
   it('shows understandable monitoring validation errors', async () => {

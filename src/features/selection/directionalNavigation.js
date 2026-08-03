@@ -1,8 +1,10 @@
 export const DIRECTIONS = Object.freeze(['up', 'right', 'down', 'left'])
 
 function getScreenDirection(source, target) {
-  const horizontalDistance = target.position.x - source.position.x
-  const verticalDistance = target.position.y - source.position.y
+  const sourcePosition = source.navigationPosition ?? source.position
+  const targetPosition = target.navigationPosition ?? target.position
+  const horizontalDistance = targetPosition.x - sourcePosition.x
+  const verticalDistance = targetPosition.y - sourcePosition.y
 
   if (Math.abs(horizontalDistance) >= Math.abs(verticalDistance)) {
     return horizontalDistance >= 0 ? 'right' : 'left'
