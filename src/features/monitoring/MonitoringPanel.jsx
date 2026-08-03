@@ -416,7 +416,7 @@ export default function MonitoringPanel({
         {isConfigured && authStatus === 'error' ? (
           <p>A secure session could not be restored.</p>
         ) : null}
-        {isConfigured && authStatus === 'ready' && !user ? (
+        {/* {isConfigured && authStatus === 'ready' && !user ? (
           <div className="existing-user-prompt">
             <div>
               <strong>Already have alerts?</strong>
@@ -429,7 +429,7 @@ export default function MonitoringPanel({
               Sign in
             </button>
           </div>
-        ) : null}
+        ) : null} */}
         {user ? (
           <div className="verified-session">
             <span aria-hidden="true">✓</span>
