@@ -43,6 +43,10 @@ button,
 input,
 select {
   font: inherit;
+}
+
+input[type='checkbox'],
+input[type='radio'] {
   accent-color: var(--accent-color);
 }
 
