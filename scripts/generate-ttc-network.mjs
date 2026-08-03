@@ -38,7 +38,9 @@ function readCsv(fileName) {
   const headers = parseCsvLine(lines.shift())
   return lines.map((line) => {
     const values = parseCsvLine(line)
-    return Object.fromEntries(headers.map((header, index) => [header, values[index] ?? '']))
+    return Object.fromEntries(
+      headers.map((header, index) => [header, values[index] ?? '']),
+    )
   })
 }
 
@@ -88,20 +90,26 @@ stopsByTrip.forEach((entries, tripId) => {
   }
 })
 
-const stopRows = new Map(readCsv('stops.txt').map((stop) => [stop.stop_id, stop]))
+const stopRows = new Map(
+  readCsv('stops.txt').map((stop) => [stop.stop_id, stop]),
+)
 const stationGroups = new Map()
 const lineRows = []
 const lineStationRows = []
 
 routes.forEach((route) => {
-  const selected = bestTripByDirection.get(`${route.route_id}:0`) ??
+  const selected =
+    bestTripByDirection.get(`${route.route_id}:0`) ??
     bestTripByDirection.get(`${route.route_id}:1`)
   if (!selected) {
     return
   }
   const orderedIds = []
   selected.entries
-    .sort((first, second) => Number(first.stop_sequence) - Number(second.stop_sequence))
+    .sort(
+      (first, second) =>
+        Number(first.stop_sequence) - Number(second.stop_sequence),
+    )
     .forEach((stopTime, index) => {
       const stop = stopRows.get(stopTime.stop_id)
       if (!stop) {
@@ -122,7 +130,10 @@ routes.forEach((route) => {
       if (!group.stopIds.includes(stop.stop_id)) {
         group.stopIds.push(stop.stop_id)
       }
-      group.coordinates.push({ lat: Number(stop.stop_lat), lon: Number(stop.stop_lon) })
+      group.coordinates.push({
+        lat: Number(stop.stop_lat),
+        lon: Number(stop.stop_lon),
+      })
       stationGroups.set(stationId, group)
       if (!orderedIds.includes(stationId)) {
         orderedIds.push(stationId)
@@ -145,13 +156,25 @@ routes.forEach((route) => {
 })
 
 const groups = [...stationGroups.values()]
-const minLat = Math.min(...groups.flatMap((group) => group.coordinates.map((point) => point.lat)))
-const maxLat = Math.max(...groups.flatMap((group) => group.coordinates.map((point) => point.lat)))
-const minLon = Math.min(...groups.flatMap((group) => group.coordinates.map((point) => point.lon)))
-const maxLon = Math.max(...groups.flatMap((group) => group.coordinates.map((point) => point.lon)))
+const minLat = Math.min(
+  ...groups.flatMap((group) => group.coordinates.map((point) => point.lat)),
+)
+const maxLat = Math.max(
+  ...groups.flatMap((group) => group.coordinates.map((point) => point.lat)),
+)
+const minLon = Math.min(
+  ...groups.flatMap((group) => group.coordinates.map((point) => point.lon)),
+)
+const maxLon = Math.max(
+  ...groups.flatMap((group) => group.coordinates.map((point) => point.lon)),
+)
 const coordinate = (group) => {
-  const lat = group.coordinates.reduce((sum, point) => sum + point.lat, 0) / group.coordinates.length
-  const lon = group.coordinates.reduce((sum, point) => sum + point.lon, 0) / group.coordinates.length
+  const lat =
+    group.coordinates.reduce((sum, point) => sum + point.lat, 0) /
+    group.coordinates.length
+  const lon =
+    group.coordinates.reduce((sum, point) => sum + point.lon, 0) /
+    group.coordinates.length
   return {
     x: Math.round(70 + ((lon - minLon) / (maxLon - minLon)) * 930),
     y: Math.round(55 + ((maxLat - lat) / (maxLat - minLat)) * 510),
@@ -165,7 +188,9 @@ const stations = groups.map((group) => ({
   officialStopIds: group.stopIds,
   position: coordinate(group),
   labelPlacement: group.lineIds.length > 1 ? 'top-right' : 'right',
-  ...(group.lineIds.length > 1 ? { interchange: { lineIds: group.lineIds } } : {}),
+  ...(group.lineIds.length > 1
+    ? { interchange: { lineIds: group.lineIds } }
+    : {}),
 }))
 const connections = lineRows.flatMap((line) =>
   line.orderedStationIds.slice(1).map((stationId, index) => ({
@@ -183,7 +208,10 @@ const network = {
     isPrototype: false,
     source: 'TTC Routes and Schedules GTFS via Toronto Open Data',
   },
-  lines: lineRows.map(({ officialRouteId, ...line }) => ({ ...line, officialRouteId })),
+  lines: lineRows.map(({ officialRouteId, ...line }) => ({
+    ...line,
+    officialRouteId,
+  })),
   stations,
   connections,
 }
@@ -200,22 +228,36 @@ const seedLines = [
   'insert into public.transit_stations (id, network_code, name, official_stop_id, official_stop_ids)',
   'values',
   stations
-    .map((station) => `  (${quoteSql(station.id)}, 'ttc', ${quoteSql(station.name)}, ${quoteSql(station.officialStopId)}, ARRAY[${station.officialStopIds.map(quoteSql).join(', ')}])`)
+    .map(
+      (station) =>
+        `  (${quoteSql(station.id)}, 'ttc', ${quoteSql(station.name)}, ${quoteSql(station.officialStopId)}, ARRAY[${station.officialStopIds.map(quoteSql).join(', ')}])`,
+    )
     .join(',\n'),
   'on conflict (id) do update set name = excluded.name, official_stop_id = excluded.official_stop_id, official_stop_ids = excluded.official_stop_ids, is_active = true;',
   '',
   'insert into public.transit_lines (id, network_code, official_route_id, name)',
   'values',
-  lineRows.map((line) => `  (${quoteSql(line.id)}, 'ttc', ${quoteSql(line.officialRouteId)}, ${quoteSql(line.name)})`).join(',\n'),
+  lineRows
+    .map(
+      (line) =>
+        `  (${quoteSql(line.id)}, 'ttc', ${quoteSql(line.officialRouteId)}, ${quoteSql(line.name)})`,
+    )
+    .join(',\n'),
   'on conflict (id) do update set official_route_id = excluded.official_route_id, name = excluded.name, is_active = true;',
   '',
   'insert into public.transit_line_stations (line_id, station_id, branch_id, station_sequence)',
   'values',
-  lineStationRows.map((row) => `  (${quoteSql(row.lineId)}, ${quoteSql(row.stationId)}, '', ${row.sequence})`).join(',\n'),
+  lineStationRows
+    .map(
+      (row) =>
+        `  (${quoteSql(row.lineId)}, ${quoteSql(row.stationId)}, '', ${row.sequence})`,
+    )
+    .join(',\n'),
   'on conflict (line_id, branch_id, station_sequence) do update set station_id = excluded.station_id;',
   '',
 ].join('\n')
 writeFileSync(join(process.cwd(), 'supabase', 'seed-ttc.sql'), `${seedLines}\n`)
 
-console.log(`Generated ${stations.length} stations across ${lineRows.length} subway lines.`)
-
+console.log(
+  `Generated ${stations.length} stations across ${lineRows.length} subway lines.`,
+)

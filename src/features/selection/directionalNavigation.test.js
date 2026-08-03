@@ -4,7 +4,11 @@ import { getDirectionalCandidates } from './directionalNavigation.js'
 
 describe('ordered directional navigation', () => {
   it('follows an ordinary line in station order', () => {
-    const candidates = getDirectionalCandidates(sampleNetwork, 'north-york-centre', 'down')
+    const candidates = getDirectionalCandidates(
+      sampleNetwork,
+      'north-york-centre',
+      'down',
+    )
 
     expect(candidates).toHaveLength(1)
     expect(candidates[0]).toMatchObject({
@@ -14,9 +18,7 @@ describe('ordered directional navigation', () => {
   })
 
   it('returns no candidate past a terminal station', () => {
-    expect(getDirectionalCandidates(sampleNetwork, 'finch', 'up')).toEqual(
-      [],
-    )
+    expect(getDirectionalCandidates(sampleNetwork, 'finch', 'up')).toEqual([])
   })
 
   it('uses the arrow direction to choose a line at an interchange', () => {
@@ -29,8 +31,15 @@ describe('ordered directional navigation', () => {
   })
 
   it('returns every ordered option when a branch direction is ambiguous', () => {
-    const candidates = getDirectionalCandidates(sampleNetwork, 'st-george', 'left')
+    const candidates = getDirectionalCandidates(
+      sampleNetwork,
+      'st-george',
+      'left',
+    )
     expect(candidates).toHaveLength(2)
-    expect(candidates.map((candidate) => candidate.lineId)).toEqual(['line-1', 'line-2'])
+    expect(candidates.map((candidate) => candidate.lineId)).toEqual([
+      'line-1',
+      'line-2',
+    ])
   })
 })

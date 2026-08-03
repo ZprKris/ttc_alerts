@@ -13,7 +13,9 @@ describe('subway map', () => {
         name: /choose the stations you care about/i,
       }),
     ).toBeInTheDocument()
-    expect(screen.getByRole('region', { name: /interactive ttc subway map/i })).toBeInTheDocument()
+    expect(
+      screen.getByRole('region', { name: /interactive ttc subway map/i }),
+    ).toBeInTheDocument()
     expect(screen.getByText('Finch')).toBeInTheDocument()
     expect(screen.getByText('Sheppard-Yonge')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /zoom in/i })).toBeEnabled()
@@ -101,7 +103,9 @@ describe('subway map', () => {
     await user.click(northgate)
     await user.keyboard('{ArrowDown}')
 
-    const cedar = screen.getByRole('button', { name: /north york centre station/i })
+    const cedar = screen.getByRole('button', {
+      name: /north york centre station/i,
+    })
     expect(cedar).toHaveAttribute('aria-pressed', 'true')
     expect(cedar).toHaveFocus()
 
@@ -146,9 +150,7 @@ describe('subway map', () => {
     ).toBeInTheDocument()
     expect(screen.getByLabelText('1 station selected')).toHaveTextContent('1')
 
-    await user.click(
-      screen.getByRole('button', { name: /spadina.*line 1/i }),
-    )
+    await user.click(screen.getByRole('button', { name: /spadina.*line 1/i }))
 
     const hillcrest = screen.getByRole('button', {
       name: /spadina station/i,

@@ -19,7 +19,7 @@ export default function MapWorkspace({
           <p className="eyebrow">Subway network</p>
           <h1 id="map-heading">Choose the stations you care about</h1>
         </div>
-          <span className="map-status">
+        <span className="map-status">
           <span aria-hidden="true" /> Official TTC network
         </span>
       </div>
