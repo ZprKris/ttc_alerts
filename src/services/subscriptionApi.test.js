@@ -38,7 +38,21 @@ describe('subscription email links', () => {
     await expect(
       requestEmailLink('rider@example.com', { shouldCreateUser: false }),
     ).rejects.toMatchObject({
-      message: expect.stringMatching(/wait at least 60 seconds/i),
+      message: expect.stringMatching(/this email address.*wait 60 seconds/i),
+      isEmailDeliveryFailure: true,
+      isRateLimited: true,
+    })
+  })
+
+  it('distinguishes a network request limit from an email cooldown', async () => {
+    signInWithOtp.mockResolvedValue({
+      error: { status: 429, code: 'over_request_rate_limit' },
+    })
+
+    await expect(
+      requestEmailLink('rider@example.com', { shouldCreateUser: true }),
+    ).rejects.toMatchObject({
+      message: expect.stringMatching(/from this network/i),
       isEmailDeliveryFailure: true,
       isRateLimited: true,
     })

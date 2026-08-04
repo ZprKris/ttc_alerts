@@ -179,7 +179,7 @@ describe('secure monitoring preferences', () => {
   it('shows an actionable error when Supabase rate-limits sign-in email', async () => {
     const user = userEvent.setup()
     const deliveryError = new Error(
-      'Too many sign-in emails were requested. Wait at least 60 seconds, then try again.',
+      'This email address requested a link recently. Wait 60 seconds, then try again.',
     )
     deliveryError.isEmailDeliveryFailure = true
     requestEmailLink.mockRejectedValue(deliveryError)
@@ -194,7 +194,7 @@ describe('secure monitoring preferences', () => {
     )
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Wait at least 60 seconds',
+      'Wait 60 seconds',
     )
   })
 

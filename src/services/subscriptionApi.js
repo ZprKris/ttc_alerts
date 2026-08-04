@@ -15,9 +15,17 @@ function createEmailLinkError(error) {
   let message = 'The verification email could not be sent. Try again.'
   let isEmailDeliveryFailure = false
 
-  if (error?.status === 429 || rateLimitCodes.has(error?.code)) {
+  if (error?.code === 'over_email_send_rate_limit') {
     message =
-      'Too many sign-in emails were requested. Wait at least 60 seconds, then try again.'
+      'This email address requested a link recently. Wait 60 seconds, then try again.'
+    isEmailDeliveryFailure = true
+  } else if (error?.code === 'over_request_rate_limit') {
+    message =
+      'Too many sign-in attempts came from this network. Wait a few minutes, then try again.'
+    isEmailDeliveryFailure = true
+  } else if (error?.status === 429) {
+    message =
+      'Sign-in email capacity was temporarily reached. Try again in a few minutes.'
     isEmailDeliveryFailure = true
   } else if (
     Number(error?.status) >= 500 ||
