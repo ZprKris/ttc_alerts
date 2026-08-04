@@ -108,6 +108,28 @@ describe('TTC alert matching', () => {
     expect(details).toMatchObject({ isActive: false, isFuture: true })
   })
 
+  it('treats a protobuf zero timestamp as an open active-period boundary', () => {
+    const zeroTimestamp = { valueOf: () => 0 }
+    const details = extractAlertDetails(
+      {
+        id: 'alert-open-ended',
+        alert: {
+          informedEntity: [{ routeId: '1' }],
+          activePeriod: [
+            {
+              start: { valueOf: () => 1785793200 },
+              end: zeroTimestamp,
+            },
+          ],
+        },
+      },
+      new Date('2026-08-03T21:42:00.000Z').getTime(),
+    )
+
+    expect(details.activePeriods).toEqual([{ start: 1785793200000, end: null }])
+    expect(details).toMatchObject({ isActive: true, isFuture: false })
+  })
+
   it('handles same-day and overnight monitoring windows in the configured zone', () => {
     expect(
       matchesMonitoringWindow(

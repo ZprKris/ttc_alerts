@@ -33,11 +33,16 @@ export function getTranslatedText(value) {
   )
 }
 
+function gtfsTimestampMilliseconds(value) {
+  const seconds = Number(value)
+  return Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : null
+}
+
 export function extractAlertDetails(entity, now = Date.now()) {
   const alert = entity.alert ?? {}
   const activePeriods = (alert.activePeriod ?? []).map((period) => ({
-    start: period.start ? Number(period.start) * 1000 : null,
-    end: period.end ? Number(period.end) * 1000 : null,
+    start: gtfsTimestampMilliseconds(period.start),
+    end: gtfsTimestampMilliseconds(period.end),
   }))
   const isActive =
     activePeriods.length === 0 ||
