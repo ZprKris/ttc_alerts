@@ -198,6 +198,26 @@ describe('secure monitoring preferences', () => {
     )
   })
 
+  it('prevents duplicate sign-in email requests during the cooldown', async () => {
+    const user = userEvent.setup()
+    render(<MonitoringPanel {...createProps()} />)
+
+    await user.type(
+      screen.getByRole('textbox', { name: /email address/i }),
+      'rider@example.com',
+    )
+    await user.click(
+      screen.getByRole('button', { name: /sign in to existing alerts/i }),
+    )
+
+    expect(
+      screen.getByRole('button', {
+        name: /sign-in email available in 60s/i,
+      }),
+    ).toBeDisabled()
+    expect(requestEmailLink).toHaveBeenCalledOnce()
+  })
+
   it('keeps the compact sign-in action without the existing-user prompt', () => {
     render(<MonitoringPanel {...createProps()} />)
 

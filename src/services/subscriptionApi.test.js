@@ -40,6 +40,7 @@ describe('subscription email links', () => {
     ).rejects.toMatchObject({
       message: expect.stringMatching(/wait at least 60 seconds/i),
       isEmailDeliveryFailure: true,
+      isRateLimited: true,
     })
   })
 

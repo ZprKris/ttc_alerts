@@ -30,6 +30,8 @@ function createEmailLinkError(error) {
 
   const requestError = new Error(message)
   requestError.isEmailDeliveryFailure = isEmailDeliveryFailure
+  requestError.isRateLimited =
+    error?.status === 429 || rateLimitCodes.has(error?.code)
   return requestError
 }
 

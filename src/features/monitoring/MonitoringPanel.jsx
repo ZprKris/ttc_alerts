@@ -20,6 +20,8 @@ import {
 } from './monitoringForm.js'
 import './monitoringPanel.css'
 
+const EMAIL_LINK_COOLDOWN_SECONDS = 60
+
 const timeOptions = Array.from({ length: 48 }, (_, index) => {
   const hour = Math.floor(index / 2)
   const minute = index % 2 === 0 ? '00' : '30'
@@ -84,6 +86,7 @@ export default function MonitoringPanel({
   const [activeTab, setActiveTab] = useState('setup')
   const [expandedPreferenceId, setExpandedPreferenceId] = useState(null)
   const [confirmingDeleteId, setConfirmingDeleteId] = useState(null)
+  const [emailLinkCooldown, setEmailLinkCooldown] = useState(0)
   const loadedUserId = useRef(null)
   const emailInputRef = useRef(null)
   const {
@@ -142,6 +145,22 @@ export default function MonitoringPanel({
       isActive = false
     }
   }, [user?.id])
+
+  useEffect(() => {
+    if (emailLinkCooldown <= 0) {
+      return undefined
+    }
+
+    const timer = window.setTimeout(() => {
+      setEmailLinkCooldown((seconds) => Math.max(0, seconds - 1))
+    }, 1000)
+
+    return () => window.clearTimeout(timer)
+  }, [emailLinkCooldown])
+
+  const startEmailLinkCooldown = () => {
+    setEmailLinkCooldown(EMAIL_LINK_COOLDOWN_SECONDS)
+  }
 
   const updateValue = (fieldName, value) => {
     setValues((currentValues) => ({
@@ -218,12 +237,16 @@ export default function MonitoringPanel({
 
       try {
         await requestEmailLink(values.email, { shouldCreateUser: true })
+        startEmailLinkCooldown()
         setSubmission({
           kind: 'link-sent',
           message:
             'Check your email for a secure verification link. Open it in this browser to restore your selected stations and finish saving.',
         })
       } catch (error) {
+        if (error.isRateLimited) {
+          startEmailLinkCooldown()
+        }
         setSubmission({ kind: 'error', message: error.message })
       }
       return
@@ -292,6 +315,9 @@ export default function MonitoringPanel({
       await requestEmailLink(values.email, { shouldCreateUser: false })
     } catch (error) {
       if (error.isEmailDeliveryFailure) {
+        if (error.isRateLimited) {
+          startEmailLinkCooldown()
+        }
         setSubmission({ kind: 'error', message: error.message })
         return
       }
@@ -299,6 +325,7 @@ export default function MonitoringPanel({
       // enumeration through this public form.
     }
 
+    startEmailLinkCooldown()
     setSubmission({
       kind: 'link-sent',
       message:
@@ -355,6 +382,7 @@ export default function MonitoringPanel({
     'saving',
     'deleting',
   ].includes(submission.kind)
+  const isEmailLinkCoolingDown = emailLinkCooldown > 0
   const showSetup = !user || activeTab === 'setup'
 
   return (
@@ -794,10 +822,12 @@ export default function MonitoringPanel({
           <button
             className="management-link-button"
             type="button"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isEmailLinkCoolingDown}
             onClick={handleManagementLink}
           >
-            Sign in to existing alerts
+            {isEmailLinkCoolingDown
+              ? `Sign-in email available in ${emailLinkCooldown}s`
+              : 'Sign in to existing alerts'}
           </button>
         ) : null}
 
@@ -826,7 +856,7 @@ export default function MonitoringPanel({
         <button
           className="primary-button"
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || (!user && isEmailLinkCoolingDown)}
         >
           {submission.kind === 'sending-link'
             ? 'Sending verification link…'
