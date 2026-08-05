@@ -24,6 +24,7 @@ function escapeHtml(value) {
 
 function cleanStationName(value) {
   return String(value ?? '')
+    .replace(/❌|✅|⏱️/gu, '')
     .replace(/\s+Station\s*-?\s*$/i, '')
     .replace(/\s+-\s*$/, '')
     .trim()

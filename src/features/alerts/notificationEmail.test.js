@@ -43,8 +43,25 @@ describe('TTC alert notification email', () => {
 
     expect(email.subject).toBe('🟡 Line 1: Lawrence West, St George ⏱️')
     expect(email.html).toContain(`<img src="${imageUrl}"`)
+    expect(email.html).not.toContain('⏱️')
+    expect(email.text).not.toContain('⏱️')
     expect(email.text).toContain(`TTC alert image: ${imageUrl}`)
     expect(email.html).not.toContain('View TTC service details')
+  })
+
+  it('strips status symbols from station names in the email body', () => {
+    const email = alertEmail(
+      {
+        route_ids: ['1'],
+        matched_station_names: ['St George ⏱️', 'Spadina ⏱️'],
+        header_text: 'There will be a scheduled service change tomorrow.',
+      },
+      { manageUrl, now },
+    )
+
+    expect(email.subject).toBe('🟡 Line 1: St George, Spadina ⏱️')
+    expect(email.html).not.toContain('⏱️')
+    expect(email.text).not.toContain('⏱️')
   })
 
   it('uses a green check when service has resumed', () => {
