@@ -106,44 +106,32 @@ export function alertEmail(candidate, { manageUrl, now = new Date() }) {
   const lineSubject = lines
     .map((line) => `${line.emoji} ${line.label}`)
     .join(' / ')
-  const stationSubject = displayStations
-    .map((station) => `${station} ${status.symbol}`)
-    .join(', ')
-  const subject = `${lineSubject || '🚇 TTC Subway'}: ${stationSubject}`
+  const stationSubject = displayStations.join(', ')
+  const subject = `${lineSubject || '🚇 TTC Subway'}: ${stationSubject} ${status.symbol}`
   const alertText =
     candidate.header_text || 'A TTC subway alert affects your stations.'
   const imageUrl = getImageUrl(candidate.alert_url)
   const detailsUrl = imageUrl ? null : candidate.alert_url
-  const lineHtml = (
-    lines.length > 0 ? lines : [{ label: 'TTC Subway', emoji: '🚇' }]
-  )
-    .map(
-      (line) =>
-        `${line.emoji ?? '🚇'}&nbsp;${escapeHtml(line.label).replaceAll(' ', '&nbsp;')}`,
-    )
-    .join('&nbsp;/&nbsp;')
   const stationHtml = displayStations
     .map(
       (station) =>
-        `<span style="display:inline-block;margin:3px 5px 3px 0;padding:7px 10px;border:1px solid #d7dce4;border-radius:999px;background:#f7f8fa">${escapeHtml(station)} <span aria-label="${escapeHtml(status.label)}">${status.symbol}</span></span>`,
+        `<span style="display:inline-block;margin:3px 5px 3px 0;padding:7px 10px;border:1px solid #d7dce4;border-radius:999px;background:#f7f8fa">${escapeHtml(station)}</span>`,
     )
     .join('')
   const text = [
-    subject,
-    '',
-    `${status.symbol} ${status.label}`,
+    `Stations: ${displayStations.join(', ')}`,
+    status.label,
     '',
     alertText,
     candidate.description_text || '',
     '',
-    `Stations: ${displayStations.join(', ')}`,
     imageUrl ? `TTC alert image: ${imageUrl}` : '',
     detailsUrl ? `TTC details: ${detailsUrl}` : '',
     `Manage alerts: ${manageUrl}`,
   ]
     .filter(Boolean)
     .join('\n')
-  const html = `<!doctype html><html lang="en"><body style="margin:0;background:#f3f5f7;font-family:Arial,sans-serif;color:#172035;line-height:1.5"><div style="max-width:640px;margin:0 auto;padding:24px 14px"><main style="background:#fff;border:1px solid #dde2e8;border-radius:16px;padding:24px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;margin:0 0 18px"><tr><td style="padding:0"><h1 style="margin:0;font-size:22px;line-height:1.3"><span style="white-space:nowrap">${lineHtml}:</span>&nbsp;<span>${escapeHtml(displayStations.join(', '))} ${status.symbol}</span></h1></td></tr></table><div style="margin-bottom:18px">${stationHtml}</div><p style="margin:0 0 16px;color:${status.color};font-weight:700">${status.symbol} ${escapeHtml(status.label)}</p><p style="margin:0 0 12px"><strong>${escapeHtml(alertText)}</strong></p>${candidate.description_text ? `<p style="margin:0 0 16px">${escapeHtml(candidate.description_text)}</p>` : ''}${imageUrl ? `<figure style="margin:20px 0"><img src="${escapeHtml(imageUrl)}" alt="TTC service alert information" width="592" style="display:block;max-width:100%;height:auto;border-radius:10px;border:1px solid #dde2e8"></figure>` : ''}${detailsUrl ? `<p><a href="${escapeHtml(detailsUrl)}">View TTC service details</a></p>` : ''}<p style="margin-top:22px"><a href="${escapeHtml(manageUrl)}">Manage your alerts</a></p><p style="margin:20px 0 0;color:#5d6b7e;font-size:13px">Sent because this alert matched a verified TTC subway monitoring subscription.</p></main></div></body></html>`
+  const html = `<!doctype html><html lang="en"><body style="margin:0;background:#f3f5f7;font-family:Arial,sans-serif;color:#172035;line-height:1.5"><div style="max-width:640px;margin:0 auto;padding:24px 14px"><main style="background:#fff;border:1px solid #dde2e8;border-radius:16px;padding:24px"><div style="margin-bottom:18px">${stationHtml}</div><p style="margin:0 0 16px;color:${status.color};font-weight:700">${escapeHtml(status.label)}</p><p style="margin:0 0 12px"><strong>${escapeHtml(alertText)}</strong></p>${candidate.description_text ? `<p style="margin:0 0 16px">${escapeHtml(candidate.description_text)}</p>` : ''}${imageUrl ? `<figure style="margin:20px 0"><img src="${escapeHtml(imageUrl)}" alt="TTC service alert information" width="592" style="display:block;max-width:100%;height:auto;border-radius:10px;border:1px solid #dde2e8"></figure>` : ''}${detailsUrl ? `<p><a href="${escapeHtml(detailsUrl)}">View TTC service details</a></p>` : ''}<p style="margin-top:22px"><a href="${escapeHtml(manageUrl)}">Manage your alerts</a></p><p style="margin:20px 0 0;color:#5d6b7e;font-size:13px">Sent because this alert matched a verified TTC subway monitoring subscription.</p></main></div></body></html>`
 
   return { subject, text, html }
 }

@@ -19,12 +19,13 @@ describe('TTC alert notification email', () => {
     )
 
     expect(email.subject).toBe('🟡 Line 1: Finch West ❌')
-    expect(email.html).toContain('🟡&nbsp;Line&nbsp;1:')
-    expect(email.html).toContain('white-space:nowrap')
-    expect(email.html).toContain('role="presentation"')
-    expect(email.html).not.toContain('display:flex')
+    expect(email.html).not.toContain('Line 1: Finch West')
+    expect(email.html).toContain('>Finch West</span>')
+    expect(email.html).not.toContain('Finch West ❌')
     expect(email.html).toContain('Service unavailable or disrupted')
+    expect(email.html).not.toContain('❌ Service unavailable or disrupted')
     expect(email.text).toContain('Stations: Finch West')
+    expect(email.text).not.toContain(email.subject)
   })
 
   it('marks future service changes and embeds a TTC image', () => {
@@ -40,7 +41,7 @@ describe('TTC alert notification email', () => {
       { manageUrl, now },
     )
 
-    expect(email.subject).toBe('🟡 Line 1: Lawrence West ⏱️, St George ⏱️')
+    expect(email.subject).toBe('🟡 Line 1: Lawrence West, St George ⏱️')
     expect(email.html).toContain(`<img src="${imageUrl}"`)
     expect(email.text).toContain(`TTC alert image: ${imageUrl}`)
     expect(email.html).not.toContain('View TTC service details')

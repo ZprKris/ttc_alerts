@@ -6,6 +6,11 @@ import {
   extractAlertDetails,
   matchesMonitoringWindow,
 } from '../_shared/alertMatching.js'
+import {
+  createRestorationEvent,
+  findMissingActiveAlerts,
+  wasActiveRatherThanFuture,
+} from '../_shared/restoration.js'
 
 const supabaseUrl = globalThis.Deno.env.get('SUPABASE_URL')
 const serviceRoleKey = globalThis.Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
@@ -169,6 +174,20 @@ async function loadActivePreferences(admin) {
   return activePreferenceRows(data)
 }
 
+async function loadActiveAlerts(admin) {
+  const { data, error } = await admin
+    .from('alert_events')
+    .select(
+      'alert_id, feed_name, content_hash, header_text, cause, effect, route_ids, stop_ids, affected_station_ids, match_kind, active_periods',
+    )
+    .eq('feed_name', feedName)
+    .eq('is_active', true)
+  if (error) {
+    throw new Error('Active alert events could not be loaded.')
+  }
+  return data
+}
+
 async function insertCandidates(admin, alert, preferences, now) {
   const stationMatchesByUser = new Map()
   const affected = new Set(alert.affectedStationIds)
@@ -233,11 +252,13 @@ async function pollAlerts() {
   }
 
   try {
-    const [bytes, catalog, preferences] = await Promise.all([
-      fetchFeed(),
-      loadNetworkCatalog(admin),
-      loadActivePreferences(admin),
-    ])
+    const [bytes, catalog, preferences, previousActiveAlerts] =
+      await Promise.all([
+        fetchFeed(),
+        loadNetworkCatalog(admin),
+        loadActivePreferences(admin),
+        loadActiveAlerts(admin),
+      ])
     const feed = decodeFeed(bytes)
     const feedTimestamp = feed.header?.timestamp
       ? isoTimestamp(feed.header.timestamp)
@@ -275,10 +296,33 @@ async function pollAlerts() {
       })
     }
 
-    if (normalizedAlerts.length > 0) {
+    const missingActiveAlerts = findMissingActiveAlerts(
+      previousActiveAlerts,
+      normalizedAlerts.map((alert) => alert.alert_id),
+    ).filter((alert) => wasActiveRatherThanFuture(alert, now))
+    const restorationAlerts = []
+    for (const sourceAlert of missingActiveAlerts) {
+      const contentHash = await sha256Hex(
+        JSON.stringify({
+          restoredFrom: sourceAlert.alert_id,
+          contentHash: sourceAlert.content_hash,
+        }),
+      )
+      restorationAlerts.push(
+        createRestorationEvent(sourceAlert, {
+          alertId: `${sourceAlert.alert_id.slice(0, 474)}:restored:${contentHash.slice(0, 16)}`,
+          contentHash,
+          now,
+          feedTimestamp,
+        }),
+      )
+    }
+
+    const recordedAlerts = [...normalizedAlerts, ...restorationAlerts]
+    if (recordedAlerts.length > 0) {
       const { error } = await admin
         .from('alert_events')
-        .upsert(normalizedAlerts, { onConflict: 'alert_id' })
+        .upsert(recordedAlerts, { onConflict: 'alert_id' })
       if (error) {
         throw new Error('Alert events could not be recorded.')
       }
@@ -295,6 +339,18 @@ async function pollAlerts() {
       if (!alert.is_active) {
         continue
       }
+      candidateCount += await insertCandidates(
+        admin,
+        {
+          alertId: alert.alert_id,
+          contentHash: alert.content_hash,
+          affectedStationIds: alert.affected_station_ids,
+        },
+        preferences,
+        now,
+      )
+    }
+    for (const alert of restorationAlerts) {
       candidateCount += await insertCandidates(
         admin,
         {
