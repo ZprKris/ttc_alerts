@@ -1,76 +1,29 @@
-# TTC Station Watch architecture
+# Architecture
 
-## Scope
+TTC Station Watch is a React/Vite client backed by Supabase and Resend.
 
-The first version targets the Toronto TTC subway. Official TTC static GTFS data
-will supply route and stop identifiers, while manually designed schematic
-coordinates will control the public map layout. TTC GTFS-Realtime Service Alerts
-will be integrated in a later server-side phase.
+## Flow
 
-## Frontend boundaries
+1. The map uses a generated TTC station catalog with schematic coordinates.
+2. A verified user saves stations, weekdays, and a Toronto monitoring window.
+3. Supabase Cron invokes `monitor-alerts` every two minutes.
+4. `alerts-poll` matches TTC GTFS-Realtime subway alerts to active preferences.
+5. `notifications-send` claims deduplicated candidates and sends email through Resend.
 
-- `src/data` owns normalized lines, stations, ordered station IDs, branches,
-  interchanges, official identifiers, display coordinates, and line colours.
-- `src/components` contains shared presentation components. Future React Flow
-  nodes and edges will render data but will not own network rules.
-- `src/features/selection` will own click and directional selection logic as pure,
-  testable functions plus UI state.
-- `src/features/monitoring` owns preference form state, validation, and responsive
-  presentation.
-- `src/services` will contain public client adapters. It must never contain a
-  Supabase service-role key or email-provider secret.
+When an active TTC alert disappears from the feed, the poller creates a one-time service-restored notification. Only subway Lines 1, 2, and 4 are eligible; LRT-only notices are ignored.
 
-## Data flow
+## Boundaries
 
-The network dataset is transformed into non-editable React Flow nodes and edges.
-Station interactions update an explicit set of selected station IDs. Monitoring
-preferences reference those stable IDs rather than labels or map coordinates.
+- `src/data`: lines, stations, order, interchanges, and map coordinates
+- `src/features`: selection, authentication, monitoring, and alert UI
+- `src/services`: browser-safe Supabase adapters
+- `supabase/migrations`: schema, RLS, RPCs, and Cron
+- `supabase/functions`: preferences, polling, scheduling, and email delivery
 
-Directional selection uses adjacent IDs from each line's ordered station list and
-from explicit branch station lists. Display coordinates only translate those
-valid neighbors into up, right, down, or left controls. A single candidate is
-selected and focused immediately; a terminal leaves selection unchanged and
-announces the boundary. Multiple candidates never trigger an implicit choice:
-the interface presents line- and branch-labelled buttons first. Arrow actions add
-stations and never deselect existing manual choices.
+## Security
 
-Monitoring preferences preserve start and end as local wall-clock values together
-with an IANA time zone so daylight-saving transitions can be evaluated correctly
-server-side. Selected weekdays identify the day a window starts. An end time
-earlier than its start crosses midnight into the following day; equal times are
-rejected rather than interpreted as an accidental 24-hour window.
+Supabase Auth uses passwordless magic links. Row-level security limits users to their own preferences, while server-only workers use protected secrets. Service-role, scheduler, and Resend credentials must never use the public `VITE_` prefix.
 
-Supabase Auth provides passwordless email magic links using PKCE. The browser
-temporarily stores only a non-personal schedule/station draft in session storage
-while verification completes. The email remains in Supabase Auth and is not
-duplicated in application tables. Verified sessions call an Edge Function that
-validates the bearer token, then performs reads and approved security-definer RPCs
-with a user-scoped key. Forced row-level security restricts reads to the owning
-`auth.uid()` and direct table writes are revoked. Unsubscribe deletes schedule and
-station preferences while retaining a minimal unsubscribed identity/consent
-record. See `docs/supabase-setup.md` for the schema and operational setup.
+Notification candidates are unique by user, alert, and content hash. Workers claim rows atomically and record sent, skipped, or failed delivery states.
 
-The Phase 7 `alerts-poll` Edge Function uses the official TTC GTFS-Realtime subway
-binary feed. The feed can also contain shared-stop LRT notices, so the poller
-requires a recognized TTC subway route (Line 1, 2, or 4) before creating a
-notification. A standard GTFS-Realtime binding decodes alert entities, while a
-pure matching module maps route/stop selectors and phrases such as “between A
-and B” onto ordered station ranges. Known line alerts fall back to every station
-on that line; alerts that cannot be mapped confidently are retained only when
-they identify a known station or line. Subscriber matches are constrained by the
-stored IANA-time-zone schedule and create pending, deduplicated notification
-candidates. The poller uses a server-only service-role secret and a separate
-poll secret; neither is exposed to the browser. Phase 8’s Resend worker claims
-those candidates and subscription confirmation/unsubscribe events with row
-locks, sends plain-text and accessible HTML messages, and records sent, skipped,
-or failed delivery state. Alert subjects use TTC line-colour circles, readable
-station names, and unavailable, restored, or future-service status symbols. TTC
-poster-image URLs are embedded in the HTML message. Supabase Auth continues to
-send passwordless confirmation and preference-management magic links.
-
-## Quality and deployment
-
-Vitest and React Testing Library cover important user interactions. ESLint and
-Prettier keep the JavaScript and CSS consistent. GitHub Actions and GitHub Pages
-deployment are reserved for the deployment phase, when the repository name and
-Vite base path are known.
+See [Supabase setup](supabase-setup.md) for configuration and deployment.
