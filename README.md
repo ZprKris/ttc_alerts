@@ -2,7 +2,7 @@
 
 Email alerts for service changes affecting your selected TTC subway stations and schedule.
 
-**Live:** [shuttc.org](https://shuttc.org)
+**Live:** [zprkris.github.io/ttc_alerts](https://zprkris.github.io/ttc_alerts)
 
 ## Develop
 
